@@ -2,6 +2,9 @@
 
 An interactive, responsive mathematics visualization tool built for exploring natural numbers, factor pair decompositions, custom multiplication tables, flashcard revisions, Pythagorean multiplication matrices, and number theory properties.
 
+🚀 **Live App**: [https://arithmetica.netlify.app/](https://arithmetica.netlify.app/)
+
+[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://arithmetica.netlify.app/)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/deploy-status.svg)](https://app.netlify.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
