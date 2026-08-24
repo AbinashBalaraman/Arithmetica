@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
 import { getNumberDetail, soundFx } from '../utils/mathUtils';
 
 interface NumberCardProps {
   n: number;
+  index?: number;
   isSelected?: boolean;
   onSelect: (n: number) => void;
   darkMode?: boolean;
@@ -10,6 +12,7 @@ interface NumberCardProps {
 
 export const NumberCard: React.FC<NumberCardProps> = ({
   n,
+  index = 0,
   isSelected = false,
   onSelect,
   darkMode = false,
@@ -39,25 +42,35 @@ export const NumberCard: React.FC<NumberCardProps> = ({
   }, [detail, n]);
 
   return (
-    <button
+    <motion.button
       id={`number-card-${n}`}
+      layout="position"
+      initial={{ opacity: 0, y: 16, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+      transition={{
+        duration: 0.28,
+        ease: [0.22, 1, 0.36, 1],
+        delay: Math.min((index % 60) * 0.02, 0.4),
+      }}
+      whileTap={{ scale: 0.97 }}
       onClick={handleClick}
-      className={`group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl text-left transition-all duration-200 cursor-pointer overflow-hidden border ${
+      className={`group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl text-left transition-colors duration-200 cursor-pointer overflow-hidden border ${
         isSelected
           ? darkMode
-            ? 'bg-[#33332B] border-[#C29B38] ring-2 ring-[#C29B38]/40 shadow-md -translate-y-1'
-            : 'bg-[#F2EFE9] border-[#5A5A40] ring-2 ring-[#5A5A40]/30 shadow-md -translate-y-1'
+            ? 'bg-[#33332B] border-[#C29B38] ring-2 ring-[#C29B38]/40 shadow-md'
+            : 'bg-[#F2EFE9] border-[#5A5A40] ring-2 ring-[#5A5A40]/30 shadow-md'
           : detail.isPrime
           ? darkMode
-            ? 'bg-[#23231F] border-[#383832] hover:border-[#A3B18A] hover:bg-[#282822] hover:-translate-y-1 hover:shadow-md'
-            : 'bg-white border-[#E8E4DE] hover:border-[#6E7A5A] hover:bg-[#FAF8F5] hover:-translate-y-1 hover:shadow-md'
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#A3B18A] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#6E7A5A] hover:bg-[#FAF8F5] hover:shadow-md'
           : detail.isSquare
           ? darkMode
-            ? 'bg-[#23231F] border-[#383832] hover:border-[#C29B38] hover:bg-[#282822] hover:-translate-y-1 hover:shadow-md'
-            : 'bg-white border-[#E8E4DE] hover:border-[#8C7348] hover:bg-[#FAF8F5] hover:-translate-y-1 hover:shadow-md'
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#C29B38] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#8C7348] hover:bg-[#FAF8F5] hover:shadow-md'
           : darkMode
-          ? 'bg-[#23231F] border-[#383832] hover:border-[#525248] hover:bg-[#282822] hover:-translate-y-1 hover:shadow-md'
-          : 'bg-white border-[#E8E4DE] hover:border-[#D8D2C7] hover:bg-[#FAF8F5] hover:-translate-y-1 hover:shadow-md'
+          ? 'bg-[#23231F] border-[#383832] hover:border-[#525248] hover:bg-[#282822] hover:shadow-md'
+          : 'bg-white border-[#E8E4DE] hover:border-[#D8D2C7] hover:bg-[#FAF8F5] hover:shadow-md'
       }`}
     >
       {/* Subtle top indicator bar */}
@@ -172,6 +185,6 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           </span>
         </div>
       </div>
-    </button>
+    </motion.button>
   );
 };

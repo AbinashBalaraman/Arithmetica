@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Navbar } from './components/Navbar';
 import { FilterBar } from './components/FilterBar';
 import { NumberCard } from './components/NumberCard';
@@ -407,17 +407,23 @@ export default function App() {
             {/* Numbers Grid Container */}
             {filteredNumbers.length > 0 ? (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                  {filteredNumbers.map((num) => (
-                    <NumberCard
-                      key={num}
-                      n={num}
-                      isSelected={selectedNumber === num}
-                      onSelect={handleSelectNumber}
-                      darkMode={darkMode}
-                    />
-                  ))}
-                </div>
+                <motion.div
+                  layout
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4"
+                >
+                  <AnimatePresence mode="popLayout">
+                    {filteredNumbers.map((num, idx) => (
+                      <NumberCard
+                        key={num}
+                        n={num}
+                        index={idx}
+                        isSelected={selectedNumber === num}
+                        onSelect={handleSelectNumber}
+                        darkMode={darkMode}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
 
                 {/* Invisible Infinite Scroll Sentinel Trigger */}
                 <div
