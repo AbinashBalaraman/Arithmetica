@@ -10,7 +10,6 @@ import {
   Table2,
   Trophy,
   Dices,
-  CloudUpload,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -21,7 +20,6 @@ interface NavbarProps {
   viewMode: AppViewMode;
   setViewMode: (mode: AppViewMode) => void;
   onSelectNumber: (num: number) => void;
-  onOpenNetlifyModal: () => void;
   soundEnabled: boolean;
   setSoundEnabled: (val: boolean) => void;
   darkMode: boolean;
@@ -32,7 +30,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   viewMode,
   setViewMode,
   onSelectNumber,
-  onOpenNetlifyModal,
   soundEnabled,
   setSoundEnabled,
   darkMode,
@@ -319,21 +316,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             title={soundEnabled ? 'Mute Sounds' : 'Enable Audio Chimes'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
-
-          {/* Netlify Deploy Guide Trigger */}
-          <button
-            id="netlify-deploy-trigger-btn"
-            onClick={onOpenNetlifyModal}
-            className={`hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-sans font-semibold border transition-all cursor-pointer shadow-xs ${
-              darkMode
-                ? 'bg-[#23231F] text-[#E8E6DF] border-[#383832] hover:bg-[#2A2A24]'
-                : 'bg-white text-[#4A4A38] border-[#E8E4DE] hover:bg-[#F2EFE9]'
-            }`}
-            title="How to host on Netlify"
-          >
-            <CloudUpload className="w-3.5 h-3.5 text-[#A3B18A]" />
-            <span>Deploy</span>
           </button>
         </div>
       </div>

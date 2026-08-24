@@ -5,7 +5,6 @@ An interactive, responsive mathematics visualization tool built for exploring na
 🚀 **Live App**: [https://arithmetica.netlify.app/](https://arithmetica.netlify.app/)
 
 [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://arithmetica.netlify.app/)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/deploy-status.svg)](https://app.netlify.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-646CFF.svg)](https://vitejs.dev/)
@@ -161,7 +160,6 @@ git push -u origin main
 │   │   ├── FilterBar.tsx              # Range, category filters, and search bar
 │   │   ├── MultiplicationTablesView.tsx # Customizable 1-20+ multiplication tables
 │   │   ├── Navbar.tsx                 # Header bar, dark mode toggle, and view switcher
-│   │   ├── NetlifyDeployModal.tsx     # In-app deployment reference dialog
 │   │   ├── NumberCard.tsx             # Natural number card with factors preview
 │   │   ├── NumberDetailModal.tsx      # Modal with factor pairs, arrays, trees
 │   │   ├── RevisionView.tsx           # Compact 1-100 revision grid with instant popups

@@ -13,7 +13,6 @@ import { TimesTableMatrix } from './components/TimesTableMatrix';
 import { FactorQuizGame } from './components/FactorQuizGame';
 import { MultiplicationTablesView } from './components/MultiplicationTablesView';
 import { RevisionView } from './components/RevisionView';
-import { NetlifyDeployModal } from './components/NetlifyDeployModal';
 import {
   AppViewMode,
   FilterCategory,
@@ -55,7 +54,6 @@ export default function App() {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [isNetlifyModalOpen, setIsNetlifyModalOpen] = useState<boolean>(false);
 
   // Reset extra count when preset changes
   const handleSetRangePreset = (preset: RangePreset) => {
@@ -314,7 +312,6 @@ export default function App() {
         viewMode={viewMode}
         setViewMode={setViewMode}
         onSelectNumber={handleSelectNumber}
-        onOpenNetlifyModal={() => setIsNetlifyModalOpen(true)}
         soundEnabled={soundEnabled}
         setSoundEnabled={setSoundEnabled}
         darkMode={darkMode}
@@ -788,20 +785,13 @@ export default function App() {
                 darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
               }`}
             >
-              Natural Numbers &amp; Tables Explorer
+              Arithmetica &mdash; Natural Numbers &amp; Tables Explorer
             </span>
             <span>&bull;</span>
             <span>Factor Pair Decomposition</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsNetlifyModalOpen(true)}
-              className={`font-semibold hover:underline cursor-pointer ${
-                darkMode ? 'text-[#C29B38]' : 'text-[#5A5A40]'
-              }`}
-            >
-              Netlify Hosting Info
-            </button>
+          <div className="flex items-center gap-2 opacity-70">
+            <span>Clean Arithmetic Learning Suite</span>
           </div>
         </div>
       </footer>
@@ -814,18 +804,6 @@ export default function App() {
             number={selectedNumber}
             onClose={() => setSelectedNumber(null)}
             onSelectNumber={handleSelectNumber}
-            darkMode={darkMode}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Netlify Deployment Helper Modal */}
-      <AnimatePresence>
-        {isNetlifyModalOpen && (
-          <NetlifyDeployModal
-            key="netlify-deploy-modal"
-            isOpen={isNetlifyModalOpen}
-            onClose={() => setIsNetlifyModalOpen(false)}
             darkMode={darkMode}
           />
         )}
