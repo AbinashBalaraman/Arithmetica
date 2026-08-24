@@ -1,0 +1,6 @@
+{
+  "name": "Arithmetica",
+  "description": "Interactive natural numbers grid and lookup tool that displays all factor pairs, multiplication tables, visual array models, and math properties for any number.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
