@@ -2,5 +2,5 @@
 User-agent: *
 Allow: /
 
-# Canonical XML Sitemap
-Sitemap: https://arithmetica.netlify.app/sitemap.xml
+# XML Sitemap
+Sitemap: /sitemap.xml

@@ -2,9 +2,6 @@
 
 An interactive, responsive mathematics visualization tool built for exploring natural numbers, factor pair decompositions, custom multiplication tables, flashcard revisions, Pythagorean multiplication matrices, and number theory properties.
 
-🚀 **Live App**: [https://arithmetica.netlify.app/](https://arithmetica.netlify.app/)
-
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://arithmetica.netlify.app/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-646CFF.svg)](https://vitejs.dev/)
@@ -127,20 +124,26 @@ git push -u origin main
 
 ---
 
-## Deploying to Netlify
+## Building & Deployment
 
-### Option 1: Automatic Deploy via Git (Recommended)
-1. Push your repository to GitHub.
-2. Log into [Netlify](https://app.netlify.com) and click **"Add new site"** > **"Import an existing project"**.
-3. Select your GitHub repository (`arithmetica-factors-explorer`).
-4. Netlify will auto-detect the configuration from `netlify.toml`:
-   - **Build command**: `npm run build`
-   - **Publish directory**: `dist`
-5. Click **"Deploy site"**.
+Arithmetica is a standalone, client-side web application built with React and Vite. It produces static web assets that can be hosted on any static host or web server (e.g. Netlify, Vercel, GitHub Pages, Cloudflare Pages, Nginx, or Docker).
 
-### Option 2: Netlify Drop (Manual Drag & Drop)
-1. Run `npm run build`.
-2. Drag the generated `dist/` folder into [app.netlify.com/drop](https://app.netlify.com/drop).
+### Build for Production
+```bash
+# Generate optimized production build in dist/
+npm run build
+# or using bun
+bun run build
+```
+
+### Preview Local Build
+```bash
+npm run preview
+# or using bun
+bun run preview
+```
+
+> **Note**: Dedicated Netlify deployment settings, redirects, and automated continuous deployment configurations are maintained in the [`netlify`](https://github.com/AbinashBalaraman/Arithmetica/tree/netlify) branch.
 
 ---
 
@@ -152,8 +155,11 @@ git push -u origin main
 │   └── workflows/
 │       └── ci.yml                     # Automated CI build and type-checking
 ├── public/
-│   ├── _redirects                     # SPA routing redirect rule for Netlify
-│   └── favicon.svg                    # Application icon
+│   ├── favicon.svg                    # Application icon
+│   ├── manifest.json                  # Web application manifest
+│   ├── og-image.svg                   # Open Graph social sharing image
+│   ├── robots.txt                     # Crawler indexing rules
+│   └── sitemap.xml                    # XML sitemap
 ├── src/
 │   ├── components/
 │   │   ├── FactorQuizGame.tsx         # Factor pair practice game with streaks
@@ -171,7 +177,6 @@ git push -u origin main
 │   ├── main.tsx                       # React root mount
 │   └── types.ts                       # TypeScript interfaces and data models
 ├── index.html                         # HTML5 entry template
-├── netlify.toml                       # Netlify build and routing configuration
 ├── package.json                       # Project metadata and dependencies
 ├── tsconfig.json                      # TypeScript compiler configuration
 ├── vite.config.ts                     # Vite bundler configuration
