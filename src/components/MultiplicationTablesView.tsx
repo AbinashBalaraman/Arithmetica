@@ -84,7 +84,7 @@ export const MultiplicationTablesView: React.FC<MultiplicationTablesViewProps> =
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-full">
       {/* Header & Controls Banner */}
       <div
         className={`p-5 rounded-2xl border transition-colors shadow-xs ${
@@ -360,7 +360,7 @@ export const MultiplicationTablesView: React.FC<MultiplicationTablesViewProps> =
 
       {/* Grid of Multiplication Tables */}
       {filteredTables.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full min-w-full">
           {filteredTables.map((tableNum) => {
             const isCopied = copiedTable === tableNum;
 

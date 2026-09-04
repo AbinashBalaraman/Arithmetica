@@ -53,7 +53,30 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('arithmetica-theme');
+        if (stored === 'dark') return true;
+        if (stored === 'light') return false;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  // Synchronize theme with document.documentElement, document.body, and localStorage
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', darkMode);
+      document.body.classList.toggle('dark', darkMode);
+    }
+    try {
+      localStorage.setItem('arithmetica-theme', darkMode ? 'dark' : 'light');
+    } catch {}
+  }, [darkMode]);
 
   // Reset extra count when preset changes
   const handleSetRangePreset = (preset: RangePreset) => {
@@ -97,16 +120,22 @@ export default function App() {
     return { startNum: s, endNum: e + extraCount };
   }, [rangePreset, customStart, customEnd, extraCount]);
 
-  // Generate base numbers (seamlessly supports large sets)
+  // Generate base numbers (seamlessly supports large sets and power modes)
   const baseNumbers = useMemo(() => {
     const arr: number[] = [];
     const maxItems = 10000;
     const limit = Math.min(endNum, startNum + maxItems - 1);
     for (let i = startNum; i <= limit; i++) {
-      arr.push(i);
+      if (filterCategory === 'square') {
+        arr.push(i * i);
+      } else if (filterCategory === 'cube') {
+        arr.push(i * i * i);
+      } else {
+        arr.push(i);
+      }
     }
     return arr;
-  }, [startNum, endNum]);
+  }, [startNum, endNum, filterCategory]);
 
   // Filter & Sort numbers
   const filteredNumbers = useMemo(() => {
@@ -126,14 +155,14 @@ export default function App() {
 
       // Category filter
       if (filterCategory === 'all') return true;
+      if (filterCategory === 'square') return true;
+      if (filterCategory === 'cube') return true;
 
       const detail = getNumberDetail(n);
       if (filterCategory === 'prime') return detail.isPrime;
       if (filterCategory === 'composite') return detail.isComposite;
       if (filterCategory === 'even') return detail.isEven;
       if (filterCategory === 'odd') return detail.isOdd;
-      if (filterCategory === 'square') return detail.isSquare;
-      if (filterCategory === 'cube') return detail.isCube;
       if (filterCategory === 'multipleOf') return n % multipleOfValue === 0;
 
       return true;
@@ -301,7 +330,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+      className={`min-h-screen w-full min-w-full flex flex-col font-sans transition-colors duration-200 ${
         darkMode
           ? 'bg-[#141412] text-[#FAF8F5] selection:bg-[#C29B38] selection:text-[#181816]'
           : 'bg-[#FAF8F5] text-[#4A4A38] selection:bg-[#5A5A40] selection:text-[#FAF8F5]'
@@ -319,7 +348,7 @@ export default function App() {
       />
 
       {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 overflow-x-auto">
         {/* Quick-test banner with user examples like 27 and 64 */}
         <section
           className={`border rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-xs transition-colors ${
@@ -420,6 +449,7 @@ export default function App() {
                         isSelected={selectedNumber === num}
                         onSelect={handleSelectNumber}
                         darkMode={darkMode}
+                        filterCategory={filterCategory}
                       />
                     ))}
                   </AnimatePresence>
@@ -455,7 +485,13 @@ export default function App() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold font-sans">
-                            Auto-loading next {autoLoadBatch} numbers in {autoScrollCountdown}s...
+                            Auto-loading next {autoLoadBatch}{' '}
+                            {filterCategory === 'square'
+                              ? 'squares'
+                              : filterCategory === 'cube'
+                              ? 'cubes'
+                              : 'numbers'}{' '}
+                            in {autoScrollCountdown}s...
                           </span>
                           <span className="inline-block w-2 h-2 rounded-full bg-[#A3B18A] animate-ping" />
                         </div>
@@ -506,7 +542,12 @@ export default function App() {
                   >
                     <Loader2 className="w-4 h-4 animate-spin text-[#A3B18A]" />
                     <span className="text-xs font-semibold font-sans">
-                      Loading next {autoLoadBatch} numbers...
+                      Loading next {autoLoadBatch}{' '}
+                      {filterCategory === 'square'
+                        ? 'squares'
+                        : filterCategory === 'cube'
+                        ? 'cubes'
+                        : 'numbers'}...
                     </span>
                   </div>
                 )}
@@ -536,7 +577,11 @@ export default function App() {
                             darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
                           }`}
                         >
-                          Showing numbers up to {endNum}
+                          {filterCategory === 'square'
+                            ? `Showing squares for base numbers ${startNum} to ${endNum}`
+                            : filterCategory === 'cube'
+                            ? `Showing cubes for base numbers ${startNum} to ${endNum}`
+                            : `Showing numbers up to ${endNum}`}
                         </h4>
                         {autoLoadEnabled ? (
                           <span
@@ -572,7 +617,18 @@ export default function App() {
                           darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'
                         }`}
                       >
-                        {filteredNumbers.length} numbers loaded. {autoLoadEnabled ? 'Next numbers load automatically as you scroll.' : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
+                        {filteredNumbers.length} numbers loaded.{' '}
+                        {autoLoadEnabled
+                          ? filterCategory === 'square'
+                            ? 'Next squares load automatically as you scroll.'
+                            : filterCategory === 'cube'
+                            ? 'Next cubes load automatically as you scroll.'
+                            : 'Next numbers load automatically as you scroll.'
+                          : filterCategory === 'square' || filterCategory === 'cube'
+                          ? `Click +50 or +100 to load more ${
+                              filterCategory === 'square' ? 'squares' : 'cubes'
+                            }, or enable Auto-Scroll.`
+                          : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
                       </p>
                     </div>
                   </div>
@@ -658,7 +714,7 @@ export default function App() {
                           ? 'bg-[#23231F] hover:bg-[#2C2C26] text-[#FAF8F5] border-[#383832]'
                           : 'bg-white hover:bg-[#F2EFE9] text-[#4A4A38] border-[#E8E4DE]'
                       }`}
-                      title="Load next 50 numbers immediately"
+                      title={`Load next 50 ${filterCategory === 'square' ? 'squares' : filterCategory === 'cube' ? 'cubes' : 'numbers'} immediately`}
                     >
                       <PlusCircle className="w-3.5 h-3.5 text-[#A3B18A]" />
                       <span>+50</span>
@@ -672,7 +728,7 @@ export default function App() {
                           ? 'bg-[#C29B38] hover:bg-[#D4A373] text-[#181816]'
                           : 'bg-[#5A5A40] hover:bg-[#4A4A38] text-[#FAF8F5]'
                       }`}
-                      title="Load next 100 numbers immediately"
+                      title={`Load next 100 ${filterCategory === 'square' ? 'squares' : filterCategory === 'cube' ? 'cubes' : 'numbers'} immediately`}
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
                       <span>+100</span>
@@ -811,6 +867,7 @@ export default function App() {
             onClose={() => setSelectedNumber(null)}
             onSelectNumber={handleSelectNumber}
             darkMode={darkMode}
+            {...({ filterCategory } as any)}
           />
         )}
       </AnimatePresence>

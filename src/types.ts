@@ -2,6 +2,7 @@ export interface FactorPair {
   a: number;
   b: number;
   isSquarePair?: boolean;
+  isCubePair?: boolean;
 }
 
 export interface PrimeFactor {

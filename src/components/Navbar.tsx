@@ -152,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </form>
 
         {/* Controls & Mode Buttons */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {/* View Mode Pills with Tables & Revision */}
           <div
             className={`flex items-center border rounded-xl p-1 shadow-inner overflow-x-auto no-scrollbar ${

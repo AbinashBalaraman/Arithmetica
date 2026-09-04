@@ -1,10 +1,27 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
     font-family: 'Newsreader', Georgia, serif;
     background-color: #FAF8F5;
     color: #4A4A38;
+    min-height: 100%;
+    width: 100%;
+  }
+
+  html.dark body {
+    background-color: #141412;
+    color: #E8E4DE;
   }
   
   .font-sans-ui {
@@ -30,11 +47,27 @@
   background: #FAF8F5;
 }
 
+html.dark ::-webkit-scrollbar-track,
+.dark ::-webkit-scrollbar-track {
+  background: #141412;
+}
+
 ::-webkit-scrollbar-thumb {
-  background: #D8D2C7;
+  background: #D8D4CE;
   border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb,
+.dark ::-webkit-scrollbar-thumb {
+  background: #2A2A24;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #B6AEA2;
 }
+
+html.dark ::-webkit-scrollbar-thumb:hover,
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #383832;
+}
+

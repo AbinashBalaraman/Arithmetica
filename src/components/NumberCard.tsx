@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { getNumberDetail, soundFx } from '../utils/mathUtils';
+import { FilterCategory } from '../types';
 
 interface NumberCardProps {
   n: number;
@@ -8,6 +9,7 @@ interface NumberCardProps {
   isSelected?: boolean;
   onSelect: (n: number) => void;
   darkMode?: boolean;
+  filterCategory?: FilterCategory;
 }
 
 export const NumberCard: React.FC<NumberCardProps> = ({
@@ -16,6 +18,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
   isSelected = false,
   onSelect,
   darkMode = false,
+  filterCategory,
 }) => {
   const detail = useMemo(() => getNumberDetail(n), [n]);
 
@@ -24,13 +27,21 @@ export const NumberCard: React.FC<NumberCardProps> = ({
     onSelect(n);
   };
 
-  // Select top highlight multiplication pair (excluding 1 x N if composite, or showing square pair)
+  // Select top highlight multiplication pair (excluding 1 x N if composite, or showing square/cube pair)
   const previewPair = useMemo(() => {
     if (detail.isPrime) {
       return `1 × ${n}`;
     }
+    if (filterCategory === 'cube' && detail.isCube && detail.cubeRoot) {
+      const k = detail.cubeRoot;
+      return `${k} × ${k * k}`;
+    }
     if (detail.isSquare && detail.squareRoot) {
       return `${detail.squareRoot} × ${detail.squareRoot}`;
+    }
+    if (detail.isCube && detail.cubeRoot) {
+      const k = detail.cubeRoot;
+      return `${k} × ${k * k}`;
     }
     const nonTrivial = detail.factorPairs.filter((p) => p.a > 1);
     if (nonTrivial.length > 0) {
@@ -39,7 +50,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
       return `${best.a} × ${best.b}`;
     }
     return `1 × ${n}`;
-  }, [detail, n]);
+  }, [detail, n, filterCategory]);
 
   return (
     <motion.button
@@ -64,10 +75,18 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           ? darkMode
             ? 'bg-[#23231F] border-[#383832] hover:border-[#A3B18A] hover:bg-[#282822] hover:shadow-md'
             : 'bg-white border-[#E8E4DE] hover:border-[#6E7A5A] hover:bg-[#FAF8F5] hover:shadow-md'
+          : filterCategory === 'cube' && detail.isCube
+          ? darkMode
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#D4A373] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#9C6A5A] hover:bg-[#FAF8F5] hover:shadow-md'
           : detail.isSquare
           ? darkMode
             ? 'bg-[#23231F] border-[#383832] hover:border-[#C29B38] hover:bg-[#282822] hover:shadow-md'
             : 'bg-white border-[#E8E4DE] hover:border-[#8C7348] hover:bg-[#FAF8F5] hover:shadow-md'
+          : detail.isCube
+          ? darkMode
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#D4A373] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#9C6A5A] hover:bg-[#FAF8F5] hover:shadow-md'
           : darkMode
           ? 'bg-[#23231F] border-[#383832] hover:border-[#525248] hover:bg-[#282822] hover:shadow-md'
           : 'bg-white border-[#E8E4DE] hover:border-[#D8D2C7] hover:bg-[#FAF8F5] hover:shadow-md'
@@ -80,6 +99,10 @@ export const NumberCard: React.FC<NumberCardProps> = ({
             ? darkMode
               ? 'bg-[#A3B18A]'
               : 'bg-[#6E7A5A]'
+            : filterCategory === 'cube' && detail.isCube
+            ? darkMode
+              ? 'bg-[#D4A373]'
+              : 'bg-[#9C6A5A]'
             : detail.isSquare
             ? darkMode
               ? 'bg-[#C29B38]'
@@ -99,7 +122,11 @@ export const NumberCard: React.FC<NumberCardProps> = ({
         <span
           className={`text-3xl sm:text-4xl font-serif font-bold tracking-tight transition-colors ${
             darkMode
-              ? 'text-[#FAF8F5] group-hover:text-[#C29B38]'
+              ? filterCategory === 'cube' && detail.isCube
+                ? 'text-[#FAF8F5] group-hover:text-[#D4A373]'
+                : 'text-[#FAF8F5] group-hover:text-[#C29B38]'
+              : filterCategory === 'cube' && detail.isCube
+              ? 'text-[#4A4A38] group-hover:text-[#9C6A5A]'
               : 'text-[#4A4A38] group-hover:text-[#5A5A40]'
           }`}
         >
@@ -118,27 +145,56 @@ export const NumberCard: React.FC<NumberCardProps> = ({
               Prime
             </span>
           )}
-          {detail.isSquare && (
-            <span
-              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                darkMode
-                  ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
-                  : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
-              }`}
-            >
-              {detail.squareRoot}²
-            </span>
-          )}
-          {detail.isCube && !detail.isSquare && (
-            <span
-              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                darkMode
-                  ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
-                  : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
-              }`}
-            >
-              {detail.cubeRoot}³
-            </span>
+          {filterCategory === 'cube' ? (
+            <>
+              {detail.isCube && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.cubeRoot}³
+                </span>
+              )}
+              {detail.isSquare && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.squareRoot}²
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              {detail.isSquare && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.squareRoot}²
+                </span>
+              )}
+              {detail.isCube && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.cubeRoot}³
+                </span>
+              )}
+            </>
           )}
           <span
             className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${
@@ -166,7 +222,13 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           </span>
           <span
             className={`text-xs sm:text-sm font-bold font-mono-num ${
-              darkMode ? 'text-[#A3B18A]' : 'text-[#5A5A40]'
+              darkMode
+                ? filterCategory === 'cube' && detail.isCube
+                  ? 'text-[#D4A373]'
+                  : 'text-[#A3B18A]'
+                : filterCategory === 'cube' && detail.isCube
+                ? 'text-[#9C6A5A]'
+                : 'text-[#5A5A40]'
             }`}
           >
             {previewPair}

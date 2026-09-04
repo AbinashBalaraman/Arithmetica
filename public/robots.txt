@@ -1,0 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Canonical XML Sitemap
+Sitemap: https://arithmetica.netlify.app/sitemap.xml

@@ -90,10 +90,11 @@ export const FactorQuizGame: React.FC<FactorQuizGameProps> = ({
     setIsAnswered(true);
 
     const chosenOpts = question.options.filter((o) => selectedIds.includes(o.id));
+    const totalCorrectOpts = question.options.filter((o) => o.isCorrect);
     const allChosenAreCorrect = chosenOpts.every((o) => o.isCorrect);
-    const hasAtLeastOneCorrect = chosenOpts.some((o) => o.isCorrect);
+    const allCorrectAreChosen = chosenOpts.length === totalCorrectOpts.length;
 
-    if (allChosenAreCorrect && hasAtLeastOneCorrect) {
+    if (allChosenAreCorrect && allCorrectAreChosen && chosenOpts.length > 0) {
       soundFx.playSuccess();
       const newStreak = streak + 1;
       setStreak(newStreak);
@@ -116,7 +117,9 @@ export const FactorQuizGame: React.FC<FactorQuizGameProps> = ({
   const isUserCorrect =
     isAnswered &&
     question.options.filter((o) => selectedIds.includes(o.id)).every((o) => o.isCorrect) &&
-    question.options.filter((o) => selectedIds.includes(o.id)).length > 0;
+    question.options.filter((o) => selectedIds.includes(o.id)).length ===
+      question.options.filter((o) => o.isCorrect).length &&
+    question.options.filter((o) => o.isCorrect).length > 0;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 font-sans">

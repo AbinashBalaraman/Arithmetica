@@ -11,15 +11,15 @@ export function getNumberDetail(n: number): NumberDetail {
   const factors: number[] = [];
   const factorPairs: FactorPair[] = [];
   
-  const sqrt = Math.sqrt(num);
-  const isSquare = Number.isInteger(sqrt);
-  const squareRoot = isSquare ? Math.round(sqrt) : null;
-  
-  const cbrt = Math.cbrt(num);
-  const isCube = Math.abs(cbrt - Math.round(cbrt)) < 1e-9;
-  const cubeRoot = isCube ? Math.round(cbrt) : null;
+  const s = Math.round(Math.sqrt(num));
+  const isSquare = s * s === num;
+  const squareRoot = isSquare ? s : null;
 
-  for (let i = 1; i <= Math.sqrt(num); i++) {
+  const c = Math.round(Math.cbrt(num));
+  const isCube = c * c * c === num;
+  const cubeRoot = isCube ? c : null;
+
+  for (let i = 1; i * i <= num; i++) {
     if (num % i === 0) {
       factors.push(i);
       const other = num / i;
@@ -30,6 +30,7 @@ export function getNumberDetail(n: number): NumberDetail {
         a: i,
         b: other,
         isSquarePair: i === other,
+        isCubePair: isCube && cubeRoot !== null && (i === cubeRoot || other === cubeRoot),
       });
     }
   }

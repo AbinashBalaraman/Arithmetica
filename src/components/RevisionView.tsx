@@ -29,7 +29,7 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
   // Number limit state (starts at 100, expandable by +50 or +100)
   const [maxCount, setMaxCount] = useState<number>(100);
   const [selectedNum, setSelectedNum] = useState<number | null>(null);
-  const [filterMode, setFilterMode] = useState<'all' | 'primes' | 'squares' | 'composites'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'primes' | 'squares' | 'cubes' | 'composites'>('all');
   const [autoLoadBatch, setAutoLoadBatch] = useState<50 | 100>(100);
   const [autoLoadEnabled, setAutoLoadEnabled] = useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
@@ -49,22 +49,23 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
     }
   };
 
-  // Generate numbers from 1 to maxCount
-  const baseNumbers = useMemo(() => {
-    return Array.from({ length: maxCount }, (_, i) => i + 1);
-  }, [maxCount]);
-
-  // Filtered numbers based on quick category
+  // Generate numbers based on filterMode (power modes evaluate first N powers)
   const filteredNumbers = useMemo(() => {
-    if (filterMode === 'all') return baseNumbers;
-    return baseNumbers.filter((n) => {
+    if (filterMode === 'squares') {
+      return Array.from({ length: maxCount }, (_, i) => (i + 1) * (i + 1));
+    }
+    if (filterMode === 'cubes') {
+      return Array.from({ length: maxCount }, (_, i) => (i + 1) * (i + 1) * (i + 1));
+    }
+    const base = Array.from({ length: maxCount }, (_, i) => i + 1);
+    if (filterMode === 'all') return base;
+    return base.filter((n) => {
       const detail = getNumberDetail(n);
       if (filterMode === 'primes') return detail.isPrime;
-      if (filterMode === 'squares') return detail.isSquare;
       if (filterMode === 'composites') return !detail.isPrime && n > 1;
       return true;
     });
-  }, [baseNumbers, filterMode]);
+  }, [maxCount, filterMode]);
 
   // Details for currently selected number popup
   const activeDetail = useMemo(() => {
@@ -82,17 +83,21 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
 
   const handlePrev = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (selectedNum && selectedNum > 1) {
+    if (selectedNum === null) return;
+    const currentIndex = filteredNumbers.indexOf(selectedNum);
+    if (currentIndex > 0) {
       soundFx.playPop(1);
-      setSelectedNum(selectedNum - 1);
+      setSelectedNum(filteredNumbers[currentIndex - 1]);
     }
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (selectedNum && selectedNum < maxCount) {
+    if (selectedNum === null) return;
+    const currentIndex = filteredNumbers.indexOf(selectedNum);
+    if (currentIndex >= 0 && currentIndex < filteredNumbers.length - 1) {
       soundFx.playPop(1);
-      setSelectedNum(selectedNum + 1);
+      setSelectedNum(filteredNumbers[currentIndex + 1]);
     }
   };
 
@@ -189,21 +194,23 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
       if (e.key === 'Escape') {
         setSelectedNum(null);
       } else if (e.key === 'ArrowLeft') {
-        if (selectedNum > 1) {
+        const currentIndex = filteredNumbers.indexOf(selectedNum);
+        if (currentIndex > 0) {
           soundFx.playPop(1);
-          setSelectedNum((prev) => (prev ? Math.max(1, prev - 1) : null));
+          setSelectedNum(filteredNumbers[currentIndex - 1]);
         }
       } else if (e.key === 'ArrowRight') {
-        if (selectedNum < maxCount) {
+        const currentIndex = filteredNumbers.indexOf(selectedNum);
+        if (currentIndex >= 0 && currentIndex < filteredNumbers.length - 1) {
           soundFx.playPop(1);
-          setSelectedNum((prev) => (prev ? Math.min(maxCount, prev + 1) : null));
+          setSelectedNum(filteredNumbers[currentIndex + 1]);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNum, maxCount]);
+  }, [selectedNum, filteredNumbers]);
 
   // Infinite scroll trigger with 3s timer and cooldown
   useEffect(() => {
@@ -274,7 +281,11 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                     darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
                   }`}
                 >
-                  Quick Revision Flashcards (1–{maxCount})
+                  {filterMode === 'squares'
+                    ? `Quick Revision: Squares (1²–${maxCount}²)`
+                    : filterMode === 'cubes'
+                    ? `Quick Revision: Cubes (1³–${maxCount}³)`
+                    : `Quick Revision Flashcards (1–${maxCount})`}
                 </h2>
                 <span
                   className={`text-[10px] font-sans font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
@@ -309,6 +320,7 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
               { id: 'all', label: `All (1–${maxCount})` },
               { id: 'primes', label: 'Primes Only' },
               { id: 'squares', label: 'Perfect Squares' },
+              { id: 'cubes', label: 'Perfect Cubes' },
               { id: 'composites', label: 'Composites' },
             ].map((cat) => (
               <button
@@ -345,8 +357,10 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-2.5">
           {filteredNumbers.map((num) => {
             const isSelected = selectedNum === num;
-            const isPrime = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97].includes(num) || (num > 100 && getNumberDetail(num).isPrime);
-            const isSquare = Number.isInteger(Math.sqrt(num));
+            const detail = getNumberDetail(num);
+            const isPrime = detail.isPrime;
+            const isSquare = detail.isSquare;
+            const isCube = detail.isCube;
 
             return (
               <button
@@ -358,10 +372,18 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                     ? darkMode
                       ? 'bg-[#C29B38] text-[#181816] border-[#C29B38] ring-2 ring-[#C29B38]/60 scale-105 z-10 font-bold shadow-lg'
                       : 'bg-[#5A5A40] text-[#FAF8F5] border-[#5A5A40] ring-2 ring-[#5A5A40]/40 scale-105 z-10 font-bold shadow-lg'
+                    : filterMode === 'cubes' && isCube
+                    ? darkMode
+                      ? 'bg-[#2E2420] hover:bg-[#382E28] text-[#FAF8F5] border-[#483730]'
+                      : 'bg-[#FBF6F0] hover:bg-[#F4ECE2] text-[#4A4A38] border-[#E2D4C6]'
                     : isSquare
                     ? darkMode
                       ? 'bg-[#2A2922] hover:bg-[#343228] text-[#FAF8F5] border-[#4E4A35]'
                       : 'bg-[#FAF6ED] hover:bg-[#F2EFE9] text-[#4A4A38] border-[#D8D2C7]'
+                    : isCube
+                    ? darkMode
+                      ? 'bg-[#2E2420] hover:bg-[#382E28] text-[#FAF8F5] border-[#483730]'
+                      : 'bg-[#FBF6F0] hover:bg-[#F4ECE2] text-[#4A4A38] border-[#E2D4C6]'
                     : isPrime
                     ? darkMode
                       ? 'bg-[#1C241D] hover:bg-[#232F24] text-[#A3B18A] border-[#2E3C2F]'
@@ -383,16 +405,32 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                       ? darkMode
                         ? 'text-[#A3B18A]'
                         : 'text-[#6E7A5A]'
+                      : isSquare && isCube
+                      ? darkMode
+                        ? 'text-[#D4A373]'
+                        : 'text-[#9C6A5A]'
                       : isSquare
                       ? darkMode
                         ? 'text-[#C29B38]'
                         : 'text-[#8C7348]'
+                      : isCube
+                      ? darkMode
+                        ? 'text-[#D4A373]'
+                        : 'text-[#9C6A5A]'
                       : darkMode
                       ? 'text-[#7A776E]'
                       : 'text-[#9A948C]'
                   }`}
                 >
-                  {isPrime ? 'P' : isSquare ? 'Sq' : ''}
+                  {isPrime
+                    ? 'P'
+                    : isSquare && isCube
+                    ? 'Sq·Cb'
+                    : isSquare
+                    ? 'Sq'
+                    : isCube
+                    ? 'Cb'
+                    : ''}
                 </span>
               </button>
             );
@@ -413,6 +451,10 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#8C7348]" />
               <span>Square (Sq)</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#9C6A5A]" />
+              <span>Cube (Cb)</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#5A5A40]" />
@@ -472,10 +514,18 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                             ? darkMode
                               ? 'bg-[#1C241D] text-[#A3B18A] border-[#2E3C2F]'
                               : 'bg-[#F2F5EF] text-[#6E7A5A] border-[#D4DCCF]'
+                            : activeDetail.isSquare && activeDetail.isCube
+                            ? darkMode
+                              ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                              : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
                             : activeDetail.isSquare
                             ? darkMode
                               ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
                               : 'bg-[#FAF6ED] text-[#8C7348] border-[#D8D2C7]'
+                            : activeDetail.isCube
+                            ? darkMode
+                              ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                              : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
                             : darkMode
                             ? 'bg-[#181816] text-[#9E9B90] border-[#383832]'
                             : 'bg-[#FAF8F5] text-[#9A948C] border-[#E8E4DE]'
@@ -483,16 +533,24 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                       >
                         {activeDetail.isPrime
                           ? 'Prime'
+                          : activeDetail.isSquare && activeDetail.isCube
+                          ? 'Square & Cube'
                           : activeDetail.isSquare
                           ? 'Square'
+                          : activeDetail.isCube
+                          ? 'Cube'
                           : 'Composite'}
                       </span>
                     </div>
                     <p className="text-xs opacity-75 font-sans mt-0.5">
                       {activeDetail.isPrime
                         ? 'Divisible only by 1 and itself.'
+                        : activeDetail.isSquare && activeDetail.isCube
+                        ? `Square of ${activeDetail.squareRoot} (${activeDetail.squareRoot}²) and Cube of ${activeDetail.cubeRoot} (${activeDetail.cubeRoot}³)`
                         : activeDetail.isSquare
-                        ? `Square of ${Math.sqrt(activeDetail.n)} (${Math.sqrt(activeDetail.n)}²)`
+                        ? `Square of ${activeDetail.squareRoot} (${activeDetail.squareRoot}²)`
+                        : activeDetail.isCube
+                        ? `Cube of ${activeDetail.cubeRoot} (${activeDetail.cubeRoot}³)`
                         : `Has ${activeDetail.factors.length} total divisors.`}
                     </p>
                   </div>
@@ -501,7 +559,7 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                 <div className="flex items-center gap-1.5 font-sans">
                   <button
                     onClick={handlePrev}
-                    disabled={activeDetail.n <= 1}
+                    disabled={filteredNumbers.indexOf(activeDetail.n) <= 0}
                     className={`p-1.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-25 ${
                       darkMode
                         ? 'bg-[#181816] border-[#383832] text-[#E8E6DF] hover:bg-[#2C2C26]'
@@ -513,7 +571,10 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                   </button>
                   <button
                     onClick={handleNext}
-                    disabled={activeDetail.n >= maxCount}
+                    disabled={
+                      filteredNumbers.indexOf(activeDetail.n) < 0 ||
+                      filteredNumbers.indexOf(activeDetail.n) >= filteredNumbers.length - 1
+                    }
                     className={`p-1.5 rounded-xl border transition-colors cursor-pointer disabled:opacity-25 ${
                       darkMode
                         ? 'bg-[#181816] border-[#383832] text-[#E8E6DF] hover:bg-[#2C2C26]'
@@ -729,7 +790,11 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                   darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
                 }`}
               >
-                Revision range: 1 to {maxCount}
+                {filterMode === 'squares'
+                  ? `Revision squares: 1² to ${maxCount}²`
+                  : filterMode === 'cubes'
+                  ? `Revision cubes: 1³ to ${maxCount}³`
+                  : `Revision range: 1 to ${maxCount}`}
               </h4>
               {autoLoadEnabled ? (
                 <span
@@ -765,7 +830,18 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                 darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'
               }`}
             >
-              {filteredNumbers.length} numbers loaded. {autoLoadEnabled ? 'Next numbers load automatically as you scroll.' : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
+              {filteredNumbers.length} numbers loaded.{' '}
+              {autoLoadEnabled
+                ? filterMode === 'squares'
+                  ? 'Next squares load automatically as you scroll.'
+                  : filterMode === 'cubes'
+                  ? 'Next cubes load automatically as you scroll.'
+                  : 'Next numbers load automatically as you scroll.'
+                : filterMode === 'squares' || filterMode === 'cubes'
+                ? `Click +50 or +100 to load more ${
+                    filterMode === 'squares' ? 'squares' : 'cubes'
+                  }, or enable Auto-Scroll.`
+                : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
             </p>
           </div>
         </div>
@@ -851,10 +927,17 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                 ? 'bg-[#23231F] hover:bg-[#2C2C26] text-[#FAF8F5] border-[#383832]'
                 : 'bg-white hover:bg-[#F2EFE9] text-[#4A4A38] border-[#E8E4DE]'
             }`}
-            title="Load next 50 revision cards immediately"
+            title={`Load next 50 ${filterMode === 'squares' ? 'squares' : filterMode === 'cubes' ? 'cubes' : 'numbers'} immediately`}
           >
             <PlusCircle className="w-3.5 h-3.5 text-[#A3B18A]" />
-            <span>+50 Numbers</span>
+            <span>
+              +50{' '}
+              {filterMode === 'squares'
+                ? 'Squares'
+                : filterMode === 'cubes'
+                ? 'Cubes'
+                : 'Numbers'}
+            </span>
           </button>
 
           <button
@@ -865,10 +948,17 @@ export const RevisionView: React.FC<RevisionViewProps> = ({
                 ? 'bg-[#C29B38] hover:bg-[#D4A373] text-[#181816]'
                 : 'bg-[#5A5A40] hover:bg-[#4A4A38] text-[#FAF8F5]'
             }`}
-            title="Load next 100 revision cards immediately"
+            title={`Load next 100 ${filterMode === 'squares' ? 'squares' : filterMode === 'cubes' ? 'cubes' : 'numbers'} immediately`}
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>+100 Numbers</span>
+            <span>
+              +100{' '}
+              {filterMode === 'squares'
+                ? 'Squares'
+                : filterMode === 'cubes'
+                ? 'Cubes'
+                : 'Numbers'}
+            </span>
           </button>
 
           {maxCount > 100 && (

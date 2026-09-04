@@ -162,7 +162,8 @@ export const TimesTableMatrix: React.FC<TimesTableMatrixProps> = ({
             : 'bg-[#FAF8F5] border-[#E8E4DE]'
         }`}
       >
-        <table className="w-full border-collapse text-center select-none font-mono-num">
+        <div className="inline-block min-w-full align-middle">
+          <table className="min-w-full border-collapse text-center select-none font-mono-num">
           <thead>
             <tr>
               <th
@@ -256,6 +257,7 @@ export const TimesTableMatrix: React.FC<TimesTableMatrixProps> = ({
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Legend footer */}
