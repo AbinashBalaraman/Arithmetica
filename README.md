@@ -4,7 +4,7 @@ An interactive, responsive mathematics visualization tool built for exploring na
 
 
 🚀 **Live App**: [https://arithmetica.netlify.app/](https://arithmetica.netlify.app/)
-[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://arithmetica.netlify.app/)
+
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
