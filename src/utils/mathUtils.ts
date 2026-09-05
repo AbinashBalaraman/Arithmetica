@@ -290,3 +290,112 @@ class SoundEngine {
 }
 
 export const soundFx = new SoundEngine();
+
+/**
+ * Accurately calculates integer powers (base^exp) up to safe integer boundaries.
+ */
+export function integerPower(base: number, exp: number): number {
+  if (exp === 0) return 1;
+  if (base === 0) return 0;
+  if (exp === 1) return base;
+  let res = 1;
+  for (let i = 0; i < exp; i++) {
+    res *= base;
+    if (res > Number.MAX_SAFE_INTEGER) return Number.MAX_SAFE_INTEGER;
+  }
+  return res;
+}
+
+/**
+ * Calculates the exact integer n-th root of a number, or returns null if not an exact power.
+ * Robust against floating point precision errors by checking adjacent candidates.
+ */
+export function getNthRoot(n: number, root: number): number | null {
+  if (n <= 0 || root <= 0) return null;
+  if (n === 1) return 1;
+  if (root === 1) return n;
+  if (root === 2) {
+    const s = Math.round(Math.sqrt(n));
+    return s * s === n ? s : null;
+  }
+  if (root === 3) {
+    const c = Math.round(Math.cbrt(n));
+    return c * c * c === n ? c : null;
+  }
+
+  const approx = Math.round(Math.pow(n, 1 / root));
+  for (const candidate of [approx, approx - 1, approx + 1]) {
+    if (candidate >= 1 && integerPower(candidate, root) === n) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * Checks whether a number is an exact power of a base (n = base^k, k >= 0)
+ * and returns the exponent k.
+ */
+export function getPowerOfBaseInfo(n: number, base: number): { isPower: boolean; exponent: number | null } {
+  if (n <= 0 || base < 2) return { isPower: false, exponent: null };
+  if (n === 1) return { isPower: true, exponent: 0 };
+  let temp = n;
+  let exp = 0;
+  while (temp % base === 0) {
+    temp = Math.floor(temp / base);
+    exp++;
+  }
+  if (temp === 1) {
+    return { isPower: true, exponent: exp };
+  }
+  return { isPower: false, exponent: null };
+}
+
+/**
+ * Converts an integer exponent to Unicode superscript string (e.g. 4 -> ⁴, 10 -> ¹⁰).
+ */
+export function toSuperscript(num: number): string {
+  const superscripts: Record<string, string> = {
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹',
+  };
+  return num
+    .toString()
+    .split('')
+    .map((ch) => superscripts[ch] || ch)
+    .join('');
+}
+
+/**
+ * Friendly name for power exponents (e.g. 2 -> Squares, 3 -> Cubes, 4 -> 4th Powers).
+ */
+export function getPowerName(exp: number): string {
+  switch (exp) {
+    case 2:
+      return 'Squares';
+    case 3:
+      return 'Cubes';
+    case 4:
+      return '4th Powers';
+    case 5:
+      return '5th Powers';
+    case 6:
+      return '6th Powers';
+    case 7:
+      return '7th Powers';
+    case 8:
+      return '8th Powers';
+    case 10:
+      return '10th Powers';
+    default:
+      return `${exp}th Powers`;
+  }
+}

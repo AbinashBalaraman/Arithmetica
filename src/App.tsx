@@ -19,7 +19,14 @@ import {
   RangePreset,
   SortOrder,
 } from './types';
-import { getNumberDetail, soundFx } from './utils/mathUtils';
+import {
+  getNumberDetail,
+  soundFx,
+  integerPower,
+  getPowerOfBaseInfo,
+  toSuperscript,
+  getPowerName,
+} from './utils/mathUtils';
 import {
   Sparkles,
   ArrowUpRight,
@@ -49,7 +56,9 @@ export default function App() {
   const cooldownRef = useRef<boolean>(false);
   const loadingLockRef = useRef<boolean>(false);
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('all');
+  const [customPowerExponent, setCustomPowerExponent] = useState<number>(4);
   const [multipleOfValue, setMultipleOfValue] = useState<number>(3);
+  const [powerOfBase, setPowerOfBase] = useState<number>(2);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
@@ -130,12 +139,14 @@ export default function App() {
         arr.push(i * i);
       } else if (filterCategory === 'cube') {
         arr.push(i * i * i);
+      } else if (filterCategory === 'customPower') {
+        arr.push(integerPower(i, customPowerExponent));
       } else {
         arr.push(i);
       }
     }
     return arr;
-  }, [startNum, endNum, filterCategory]);
+  }, [startNum, endNum, filterCategory, customPowerExponent]);
 
   // Filter & Sort numbers
   const filteredNumbers = useMemo(() => {
@@ -157,6 +168,7 @@ export default function App() {
       if (filterCategory === 'all') return true;
       if (filterCategory === 'square') return true;
       if (filterCategory === 'cube') return true;
+      if (filterCategory === 'customPower') return true;
 
       const detail = getNumberDetail(n);
       if (filterCategory === 'prime') return detail.isPrime;
@@ -164,6 +176,7 @@ export default function App() {
       if (filterCategory === 'even') return detail.isEven;
       if (filterCategory === 'odd') return detail.isOdd;
       if (filterCategory === 'multipleOf') return n % multipleOfValue === 0;
+      if (filterCategory === 'powerOf') return getPowerOfBaseInfo(n, powerOfBase).isPower;
 
       return true;
     });
@@ -188,7 +201,15 @@ export default function App() {
     }
 
     return result;
-  }, [baseNumbers, searchFilter, filterCategory, multipleOfValue, sortOrder]);
+  }, [baseNumbers, searchFilter, filterCategory, multipleOfValue, powerOfBase, sortOrder]);
+
+  const itemTypeLabel = useMemo(() => {
+    if (filterCategory === 'square') return 'squares';
+    if (filterCategory === 'cube') return 'cubes';
+    if (filterCategory === 'customPower') return getPowerName(customPowerExponent).toLowerCase();
+    if (filterCategory === 'powerOf') return `powers of ${powerOfBase}`;
+    return 'numbers';
+  }, [filterCategory, customPowerExponent, powerOfBase]);
 
   const handleSelectNumber = (num: number) => {
     setSelectedNumber(num);
@@ -423,8 +444,12 @@ export default function App() {
               setCustomEnd={setCustomEnd}
               filterCategory={filterCategory}
               setFilterCategory={setFilterCategory}
+              customPowerExponent={customPowerExponent}
+              setCustomPowerExponent={setCustomPowerExponent}
               multipleOfValue={multipleOfValue}
               setMultipleOfValue={setMultipleOfValue}
+              powerOfBase={powerOfBase}
+              setPowerOfBase={setPowerOfBase}
               sortOrder={sortOrder}
               setSortOrder={setSortOrder}
               searchFilter={searchFilter}
@@ -450,6 +475,8 @@ export default function App() {
                         onSelect={handleSelectNumber}
                         darkMode={darkMode}
                         filterCategory={filterCategory}
+                        customPowerExponent={customPowerExponent}
+                        powerOfBase={powerOfBase}
                       />
                     ))}
                   </AnimatePresence>
@@ -485,13 +512,7 @@ export default function App() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold font-sans">
-                            Auto-loading next {autoLoadBatch}{' '}
-                            {filterCategory === 'square'
-                              ? 'squares'
-                              : filterCategory === 'cube'
-                              ? 'cubes'
-                              : 'numbers'}{' '}
-                            in {autoScrollCountdown}s...
+                            Auto-loading next {autoLoadBatch} {itemTypeLabel} in {autoScrollCountdown}s...
                           </span>
                           <span className="inline-block w-2 h-2 rounded-full bg-[#A3B18A] animate-ping" />
                         </div>
@@ -542,12 +563,7 @@ export default function App() {
                   >
                     <Loader2 className="w-4 h-4 animate-spin text-[#A3B18A]" />
                     <span className="text-xs font-semibold font-sans">
-                      Loading next {autoLoadBatch}{' '}
-                      {filterCategory === 'square'
-                        ? 'squares'
-                        : filterCategory === 'cube'
-                        ? 'cubes'
-                        : 'numbers'}...
+                      Loading next {autoLoadBatch} {itemTypeLabel}...
                     </span>
                   </div>
                 )}
@@ -581,6 +597,10 @@ export default function App() {
                             ? `Showing squares for base numbers ${startNum} to ${endNum}`
                             : filterCategory === 'cube'
                             ? `Showing cubes for base numbers ${startNum} to ${endNum}`
+                            : filterCategory === 'customPower'
+                            ? `Showing ${customPowerExponent}th powers (x${toSuperscript(customPowerExponent)}) for base numbers ${startNum} to ${endNum}`
+                            : filterCategory === 'powerOf'
+                            ? `Showing powers of base ${powerOfBase} in range ${startNum} to ${endNum}`
                             : `Showing numbers up to ${endNum}`}
                         </h4>
                         {autoLoadEnabled ? (
@@ -619,15 +639,9 @@ export default function App() {
                       >
                         {filteredNumbers.length} numbers loaded.{' '}
                         {autoLoadEnabled
-                          ? filterCategory === 'square'
-                            ? 'Next squares load automatically as you scroll.'
-                            : filterCategory === 'cube'
-                            ? 'Next cubes load automatically as you scroll.'
-                            : 'Next numbers load automatically as you scroll.'
-                          : filterCategory === 'square' || filterCategory === 'cube'
-                          ? `Click +50 or +100 to load more ${
-                              filterCategory === 'square' ? 'squares' : 'cubes'
-                            }, or enable Auto-Scroll.`
+                          ? `Next ${itemTypeLabel} load automatically as you scroll.`
+                          : filterCategory === 'square' || filterCategory === 'cube' || filterCategory === 'customPower' || filterCategory === 'powerOf'
+                          ? `Click +50 or +100 to load more ${itemTypeLabel}, or enable Auto-Scroll.`
                           : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
                       </p>
                     </div>
@@ -714,7 +728,7 @@ export default function App() {
                           ? 'bg-[#23231F] hover:bg-[#2C2C26] text-[#FAF8F5] border-[#383832]'
                           : 'bg-white hover:bg-[#F2EFE9] text-[#4A4A38] border-[#E8E4DE]'
                       }`}
-                      title={`Load next 50 ${filterCategory === 'square' ? 'squares' : filterCategory === 'cube' ? 'cubes' : 'numbers'} immediately`}
+                      title={`Load next 50 ${itemTypeLabel} immediately`}
                     >
                       <PlusCircle className="w-3.5 h-3.5 text-[#A3B18A]" />
                       <span>+50</span>
@@ -725,10 +739,10 @@ export default function App() {
                       onClick={() => handleManualLoad(100)}
                       className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                         darkMode
-                          ? 'bg-[#C29B38] hover:bg-[#D4A373] text-[#181816]'
+                          ? 'bg-[#C29B38] hover:bg-[#D4AC45] text-[#181816]'
                           : 'bg-[#5A5A40] hover:bg-[#4A4A38] text-[#FAF8F5]'
                       }`}
-                      title={`Load next 100 ${filterCategory === 'square' ? 'squares' : filterCategory === 'cube' ? 'cubes' : 'numbers'} immediately`}
+                      title={`Load next 100 ${itemTypeLabel} immediately`}
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
                       <span>+100</span>

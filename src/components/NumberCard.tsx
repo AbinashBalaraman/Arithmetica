@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { getNumberDetail, soundFx } from '../utils/mathUtils';
+import {
+  getNumberDetail,
+  soundFx,
+  getNthRoot,
+  getPowerOfBaseInfo,
+  toSuperscript,
+  integerPower,
+} from '../utils/mathUtils';
 import { FilterCategory } from '../types';
 
 interface NumberCardProps {
@@ -10,6 +17,8 @@ interface NumberCardProps {
   onSelect: (n: number) => void;
   darkMode?: boolean;
   filterCategory?: FilterCategory;
+  customPowerExponent?: number;
+  powerOfBase?: number;
 }
 
 export const NumberCard: React.FC<NumberCardProps> = ({
@@ -19,8 +28,24 @@ export const NumberCard: React.FC<NumberCardProps> = ({
   onSelect,
   darkMode = false,
   filterCategory,
+  customPowerExponent = 4,
+  powerOfBase = 2,
 }) => {
   const detail = useMemo(() => getNumberDetail(n), [n]);
+
+  const customRoot = useMemo(() => {
+    if (filterCategory === 'customPower') {
+      return getNthRoot(n, customPowerExponent);
+    }
+    return null;
+  }, [n, filterCategory, customPowerExponent]);
+
+  const powerOfInfo = useMemo(() => {
+    if (filterCategory === 'powerOf') {
+      return getPowerOfBaseInfo(n, powerOfBase);
+    }
+    return { isPower: false, exponent: null };
+  }, [n, filterCategory, powerOfBase]);
 
   const handleClick = () => {
     soundFx.playPop(0.9 + (n % 20) * 0.03);
@@ -29,6 +54,15 @@ export const NumberCard: React.FC<NumberCardProps> = ({
 
   // Select top highlight multiplication pair (excluding 1 x N if composite, or showing square/cube pair)
   const previewPair = useMemo(() => {
+    if (filterCategory === 'customPower' && customRoot !== null) {
+      const rest = integerPower(customRoot, customPowerExponent - 1);
+      return `${customRoot} × ${rest}`;
+    }
+    if (filterCategory === 'powerOf' && powerOfInfo.isPower && powerOfInfo.exponent !== null) {
+      if (powerOfInfo.exponent === 0) return `1 × 1`;
+      const prev = integerPower(powerOfBase, powerOfInfo.exponent - 1);
+      return `${powerOfBase} × ${prev}`;
+    }
     if (detail.isPrime) {
       return `1 × ${n}`;
     }
@@ -50,7 +84,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
       return `${best.a} × ${best.b}`;
     }
     return `1 × ${n}`;
-  }, [detail, n, filterCategory]);
+  }, [detail, n, filterCategory, customRoot, customPowerExponent, powerOfInfo, powerOfBase]);
 
   return (
     <motion.button
@@ -75,6 +109,14 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           ? darkMode
             ? 'bg-[#23231F] border-[#383832] hover:border-[#A3B18A] hover:bg-[#282822] hover:shadow-md'
             : 'bg-white border-[#E8E4DE] hover:border-[#6E7A5A] hover:bg-[#FAF8F5] hover:shadow-md'
+          : filterCategory === 'customPower' && customRoot !== null
+          ? darkMode
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#D4A373] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#9C6A5A] hover:bg-[#FAF8F5] hover:shadow-md'
+          : filterCategory === 'powerOf' && powerOfInfo.isPower
+          ? darkMode
+            ? 'bg-[#23231F] border-[#383832] hover:border-[#C29B38] hover:bg-[#282822] hover:shadow-md'
+            : 'bg-white border-[#E8E4DE] hover:border-[#8C7348] hover:bg-[#FAF8F5] hover:shadow-md'
           : filterCategory === 'cube' && detail.isCube
           ? darkMode
             ? 'bg-[#23231F] border-[#383832] hover:border-[#D4A373] hover:bg-[#282822] hover:shadow-md'
@@ -99,6 +141,14 @@ export const NumberCard: React.FC<NumberCardProps> = ({
             ? darkMode
               ? 'bg-[#A3B18A]'
               : 'bg-[#6E7A5A]'
+            : filterCategory === 'customPower' && customRoot !== null
+            ? darkMode
+              ? 'bg-[#D4A373]'
+              : 'bg-[#9C6A5A]'
+            : filterCategory === 'powerOf' && powerOfInfo.isPower
+            ? darkMode
+              ? 'bg-[#C29B38]'
+              : 'bg-[#8C7348]'
             : filterCategory === 'cube' && detail.isCube
             ? darkMode
               ? 'bg-[#D4A373]'
@@ -122,11 +172,15 @@ export const NumberCard: React.FC<NumberCardProps> = ({
         <span
           className={`text-3xl sm:text-4xl font-serif font-bold tracking-tight transition-colors ${
             darkMode
-              ? filterCategory === 'cube' && detail.isCube
+              ? (filterCategory === 'cube' && detail.isCube) || (filterCategory === 'customPower' && customRoot !== null)
                 ? 'text-[#FAF8F5] group-hover:text-[#D4A373]'
+                : (filterCategory === 'powerOf' && powerOfInfo.isPower)
+                ? 'text-[#FAF8F5] group-hover:text-[#C29B38]'
                 : 'text-[#FAF8F5] group-hover:text-[#C29B38]'
-              : filterCategory === 'cube' && detail.isCube
+              : (filterCategory === 'cube' && detail.isCube) || (filterCategory === 'customPower' && customRoot !== null)
               ? 'text-[#4A4A38] group-hover:text-[#9C6A5A]'
+              : (filterCategory === 'powerOf' && powerOfInfo.isPower)
+              ? 'text-[#4A4A38] group-hover:text-[#8C7348]'
               : 'text-[#4A4A38] group-hover:text-[#5A5A40]'
           }`}
         >
@@ -145,7 +199,79 @@ export const NumberCard: React.FC<NumberCardProps> = ({
               Prime
             </span>
           )}
-          {filterCategory === 'cube' ? (
+          {filterCategory === 'customPower' ? (
+            <>
+              {customRoot !== null && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {customRoot}{toSuperscript(customPowerExponent)}
+                </span>
+              )}
+              {detail.isSquare && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.squareRoot}²
+                </span>
+              )}
+              {detail.isCube && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.cubeRoot}³
+                </span>
+              )}
+            </>
+          ) : filterCategory === 'powerOf' ? (
+            <>
+              {powerOfInfo.isPower && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {powerOfBase}{toSuperscript(powerOfInfo.exponent!)}
+                </span>
+              )}
+              {detail.isSquare && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.squareRoot}²
+                </span>
+              )}
+              {detail.isCube && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.cubeRoot}³
+                </span>
+              )}
+            </>
+          ) : filterCategory === 'cube' ? (
             <>
               {detail.isCube && (
                 <span

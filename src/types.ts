@@ -50,7 +50,9 @@ export type FilterCategory =
   | 'composite'
   | 'square'
   | 'cube'
-  | 'multipleOf';
+  | 'customPower'
+  | 'multipleOf'
+  | 'powerOf';
 
 export type SortOrder = 'asc' | 'desc' | 'factors-count-desc' | 'factors-count-asc';
 
