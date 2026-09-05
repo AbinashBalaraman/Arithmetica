@@ -22,6 +22,10 @@ const NUMBER_DETAIL_MODAL_SRC = fs.readFileSync(
   path.resolve(process.cwd(), 'src/components/NumberDetailModal.tsx'),
   'utf8'
 );
+const FILTER_BAR_SRC = fs.readFileSync(
+  path.resolve(process.cwd(), 'src/components/FilterBar.tsx'),
+  'utf8'
+);
 
 describe('Tier 1 & Tier 2: FactorQuizGame Scoring Validation', () => {
   interface QuizOption {
@@ -370,3 +374,28 @@ describe('Tier 4: Real-World Student Exploration Scenario', () => {
     expect(attempt2Success).toBe(true); // Passed! Full points & streak awarded
   });
 });
+
+describe('Tier 5: Custom Multiples & Powers Controls & NumberCard Presentation', () => {
+  it('FilterBar renders preset dropdown and custom number input for multiples', () => {
+    expect(FILTER_BAR_SRC).toContain('id="multiple-of-preset-select"');
+    expect(FILTER_BAR_SRC).toContain('id="custom-multiple-input"');
+    expect(FILTER_BAR_SRC).toContain('Custom Number...');
+    expect(FILTER_BAR_SRC).toContain('Multiple of {m}');
+    expect(FILTER_BAR_SRC).toContain('standardMultiples');
+  });
+
+  it('FilterBar renders preset dropdown and custom base input for powers of base', () => {
+    expect(FILTER_BAR_SRC).toContain('id="power-of-preset-select"');
+    expect(FILTER_BAR_SRC).toContain('id="custom-power-base-input"');
+    expect(FILTER_BAR_SRC).toContain('Custom Base...');
+    expect(FILTER_BAR_SRC).toContain('Base {b}');
+    expect(FILTER_BAR_SRC).toContain('standardPowerBases');
+  });
+
+  it('NumberCard formats previewPair and badges for multiples of custom values', () => {
+    expect(NUMBER_CARD_SRC).toContain('multipleOfValue?: number;');
+    expect(NUMBER_CARD_SRC).toContain('filterCategory === \'multipleOf\'');
+    expect(NUMBER_CARD_SRC).toContain('${multipleOfValue} × ${m}');
+  });
+});
+

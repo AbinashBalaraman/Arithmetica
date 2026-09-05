@@ -1,15 +1,17 @@
 import { FactorPair, PrimeFactor, ContainingTable, NumberDetail } from '../types';
 
+const numberDetailCache = new Map<number, NumberDetail>();
+const MAX_CACHE_SIZE = 2500;
+
 /**
  * Calculates all factors, factor pairs, prime factorization,
  * containing multiplication tables, and number properties.
  */
 export function getNumberDetail(n: number): NumberDetail {
   const num = Math.max(1, Math.floor(n));
-  
-  // Find all factors
-  const factors: number[] = [];
-  const factorPairs: FactorPair[] = [];
+  if (numberDetailCache.has(num)) {
+    return numberDetailCache.get(num)!;
+  }
   
   const s = Math.round(Math.sqrt(num));
   const isSquare = s * s === num;
@@ -19,23 +21,54 @@ export function getNumberDetail(n: number): NumberDetail {
   const isCube = c * c * c === num;
   const cubeRoot = isCube ? c : null;
 
-  for (let i = 1; i * i <= num; i++) {
-    if (num % i === 0) {
-      factors.push(i);
-      const other = num / i;
-      if (other !== i) {
-        factors.push(other);
+  // Prime factorization with safety limit against thread freeze on massive numbers
+  const primeFactors: PrimeFactor[] = [];
+  let temp = num;
+  let d = 2;
+  const maxTrialDivisor = 100000;
+  while (d * d <= temp && d <= maxTrialDivisor) {
+    if (temp % d === 0) {
+      let count = 0;
+      while (temp % d === 0) {
+        count++;
+        temp = Math.floor(temp / d);
       }
-      factorPairs.push({
-        a: i,
-        b: other,
-        isSquarePair: i === other,
-        isCubePair: isCube && cubeRoot !== null && (i === cubeRoot || other === cubeRoot),
-      });
+      primeFactors.push({ prime: d, exponent: count });
     }
+    d = d === 2 ? 3 : d + 2;
+  }
+  if (temp > 1) {
+    primeFactors.push({ prime: temp, exponent: 1 });
   }
 
+  // Derive all factors from prime factorization
+  let factors: number[] = [1];
+  for (const pf of primeFactors) {
+    const next: number[] = [];
+    let p = 1;
+    for (let e = 1; e <= pf.exponent; e++) {
+      p *= pf.prime;
+      for (const f of factors) {
+        next.push(f * p);
+      }
+    }
+    factors.push(...next);
+  }
   factors.sort((a, b) => a - b);
+
+  // Derive factor pairs
+  const factorPairs: FactorPair[] = [];
+  for (const f of factors) {
+    if (f * f > num) break;
+    const other = Math.floor(num / f);
+    factorPairs.push({
+      a: f,
+      b: other,
+      isSquarePair: f === other,
+      isCubePair: isCube && cubeRoot !== null && (f === cubeRoot || other === cubeRoot),
+    });
+  }
+
   // Sort factor pairs nicely: [1x64, 2x32, 4x16, 8x8]
   factorPairs.sort((a, b) => a.a - b.a);
 
@@ -69,25 +102,6 @@ export function getNumberDetail(n: number): NumberDetail {
       multiplier,
       equation: `${factor} × ${multiplier} = ${num}`,
     });
-  }
-
-  // Prime factorization
-  const primeFactors: PrimeFactor[] = [];
-  let temp = num;
-  let d = 2;
-  while (d * d <= temp) {
-    if (temp % d === 0) {
-      let count = 0;
-      while (temp % d === 0) {
-        count++;
-        temp = Math.floor(temp / d);
-      }
-      primeFactors.push({ prime: d, exponent: count });
-    }
-    d = d === 2 ? 3 : d + 2;
-  }
-  if (temp > 1) {
-    primeFactors.push({ prime: temp, exponent: 1 });
   }
 
   // Format prime factorization string e.g. "2⁴ × 3²" or "Prime Number"
@@ -132,7 +146,7 @@ export function getNumberDetail(n: number): NumberDetail {
     classification = 'composite-deficient';
   }
 
-  return {
+  const result: NumberDetail = {
     n: num,
     isPrime,
     isComposite,
@@ -155,6 +169,12 @@ export function getNumberDetail(n: number): NumberDetail {
     hex: '0x' + num.toString(16).toUpperCase(),
     roman: toRomanNumeral(num),
   };
+
+  if (numberDetailCache.size >= MAX_CACHE_SIZE) {
+    numberDetailCache.clear();
+  }
+  numberDetailCache.set(num, result);
+  return result;
 }
 
 /**
@@ -293,6 +313,7 @@ export const soundFx = new SoundEngine();
 
 /**
  * Accurately calculates integer powers (base^exp) up to safe integer boundaries.
+ * Returns Infinity if calculation would exceed Number.MAX_SAFE_INTEGER to prevent precision loss.
  */
 export function integerPower(base: number, exp: number): number {
   if (exp === 0) return 1;
@@ -300,8 +321,8 @@ export function integerPower(base: number, exp: number): number {
   if (exp === 1) return base;
   let res = 1;
   for (let i = 0; i < exp; i++) {
+    if (res > Number.MAX_SAFE_INTEGER / base) return Infinity;
     res *= base;
-    if (res > Number.MAX_SAFE_INTEGER) return Number.MAX_SAFE_INTEGER;
   }
   return res;
 }
@@ -311,7 +332,7 @@ export function integerPower(base: number, exp: number): number {
  * Robust against floating point precision errors by checking adjacent candidates.
  */
 export function getNthRoot(n: number, root: number): number | null {
-  if (n <= 0 || root <= 0) return null;
+  if (n <= 0 || root <= 0 || n > Number.MAX_SAFE_INTEGER) return null;
   if (n === 1) return 1;
   if (root === 1) return n;
   if (root === 2) {
@@ -399,3 +420,32 @@ export function getPowerName(exp: number): string {
       return `${exp}th Powers`;
   }
 }
+
+/**
+ * Calculates the maximum safe integer exponent for a given base
+ * such that base^exp <= Number.MAX_SAFE_INTEGER (9007199254740991).
+ */
+export function getMaxSafeExponent(base: number): number {
+  if (base < 2) return 0;
+  let exp = 0;
+  let val = 1;
+  while (Number.isSafeInteger(val * base)) {
+    val *= base;
+    exp++;
+  }
+  return exp;
+}
+
+/**
+ * Calculates the maximum safe integer base such that base^exp <= Number.MAX_SAFE_INTEGER.
+ */
+export function getMaxSafeBase(exp: number): number {
+  if (exp <= 0) return 0;
+  if (exp === 1) return Number.MAX_SAFE_INTEGER;
+  let b = Math.floor(Math.pow(Number.MAX_SAFE_INTEGER, 1 / exp));
+  while (b > 0 && (integerPower(b, exp) > Number.MAX_SAFE_INTEGER || !Number.isSafeInteger(Math.pow(b, exp)))) {
+    b--;
+  }
+  return b;
+}
+

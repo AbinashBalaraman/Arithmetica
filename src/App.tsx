@@ -26,6 +26,8 @@ import {
   getPowerOfBaseInfo,
   toSuperscript,
   getPowerName,
+  getMaxSafeExponent,
+  getMaxSafeBase,
 } from './utils/mathUtils';
 import {
   Sparkles,
@@ -93,6 +95,26 @@ export default function App() {
     setExtraCount(0);
   };
 
+  const handleSetFilterCategory = (cat: FilterCategory) => {
+    setFilterCategory(cat);
+    setExtraCount(0);
+  };
+
+  const handleSetMultipleOfValue = (val: number) => {
+    setMultipleOfValue(val);
+    setExtraCount(0);
+  };
+
+  const handleSetPowerOfBase = (base: number) => {
+    setPowerOfBase(base);
+    setExtraCount(0);
+  };
+
+  const handleSetCustomPowerExponent = (exp: number) => {
+    setCustomPowerExponent(exp);
+    setExtraCount(0);
+  };
+
   // Compute number range based on preset + extra dynamically loaded count
   const { startNum, endNum } = useMemo(() => {
     let s = 1;
@@ -129,24 +151,45 @@ export default function App() {
     return { startNum: s, endNum: e + extraCount };
   }, [rangePreset, customStart, customEnd, extraCount]);
 
-  // Generate base numbers (seamlessly supports large sets and power modes)
+  // Generate base numbers (seamlessly supports large sets, multiples, and power modes)
   const baseNumbers = useMemo(() => {
     const arr: number[] = [];
     const maxItems = 10000;
     const limit = Math.min(endNum, startNum + maxItems - 1);
-    for (let i = startNum; i <= limit; i++) {
-      if (filterCategory === 'square') {
+    if (filterCategory === 'square') {
+      for (let i = startNum; i <= limit; i++) {
         arr.push(i * i);
-      } else if (filterCategory === 'cube') {
+      }
+    } else if (filterCategory === 'cube') {
+      for (let i = startNum; i <= limit; i++) {
         arr.push(i * i * i);
-      } else if (filterCategory === 'customPower') {
+      }
+    } else if (filterCategory === 'customPower') {
+      const maxBase = getMaxSafeBase(customPowerExponent);
+      const safeLimit = Math.min(limit, maxBase);
+      for (let i = startNum; i <= safeLimit; i++) {
         arr.push(integerPower(i, customPowerExponent));
-      } else {
+      }
+    } else if (filterCategory === 'multipleOf') {
+      const step = Math.max(1, multipleOfValue);
+      for (let i = startNum; i <= limit; i++) {
+        arr.push(i * step);
+      }
+    } else if (filterCategory === 'powerOf') {
+      const maxExp = getMaxSafeExponent(powerOfBase);
+      for (let i = startNum; i <= limit; i++) {
+        const exp = i - 1;
+        if (exp >= 0 && exp <= maxExp) {
+          arr.push(integerPower(powerOfBase, exp));
+        }
+      }
+    } else {
+      for (let i = startNum; i <= limit; i++) {
         arr.push(i);
       }
     }
     return arr;
-  }, [startNum, endNum, filterCategory, customPowerExponent]);
+  }, [startNum, endNum, filterCategory, customPowerExponent, multipleOfValue, powerOfBase]);
 
   // Filter & Sort numbers
   const filteredNumbers = useMemo(() => {
@@ -169,14 +212,14 @@ export default function App() {
       if (filterCategory === 'square') return true;
       if (filterCategory === 'cube') return true;
       if (filterCategory === 'customPower') return true;
+      if (filterCategory === 'multipleOf') return true;
+      if (filterCategory === 'powerOf') return true;
 
       const detail = getNumberDetail(n);
       if (filterCategory === 'prime') return detail.isPrime;
       if (filterCategory === 'composite') return detail.isComposite;
       if (filterCategory === 'even') return detail.isEven;
       if (filterCategory === 'odd') return detail.isOdd;
-      if (filterCategory === 'multipleOf') return n % multipleOfValue === 0;
-      if (filterCategory === 'powerOf') return getPowerOfBaseInfo(n, powerOfBase).isPower;
 
       return true;
     });
@@ -201,15 +244,16 @@ export default function App() {
     }
 
     return result;
-  }, [baseNumbers, searchFilter, filterCategory, multipleOfValue, powerOfBase, sortOrder]);
+  }, [baseNumbers, searchFilter, filterCategory, sortOrder]);
 
   const itemTypeLabel = useMemo(() => {
     if (filterCategory === 'square') return 'squares';
     if (filterCategory === 'cube') return 'cubes';
     if (filterCategory === 'customPower') return getPowerName(customPowerExponent).toLowerCase();
     if (filterCategory === 'powerOf') return `powers of ${powerOfBase}`;
+    if (filterCategory === 'multipleOf') return `multiples of ${multipleOfValue}`;
     return 'numbers';
-  }, [filterCategory, customPowerExponent, powerOfBase]);
+  }, [filterCategory, customPowerExponent, powerOfBase, multipleOfValue]);
 
   const handleSelectNumber = (num: number) => {
     setSelectedNumber(num);
@@ -246,6 +290,12 @@ export default function App() {
   // Start 3-second countdown when near bottom and auto-scroll is enabled
   const startAutoScrollCountdown = () => {
     if (!autoLoadEnabled || loadingLockRef.current || cooldownRef.current || autoScrollCountdown !== null) {
+      return;
+    }
+    if (filterCategory === 'powerOf' && baseNumbers.length >= getMaxSafeExponent(powerOfBase) + 1) {
+      return;
+    }
+    if (filterCategory === 'customPower' && baseNumbers.length >= getMaxSafeBase(customPowerExponent)) {
       return;
     }
 
@@ -443,13 +493,13 @@ export default function App() {
               customEnd={customEnd}
               setCustomEnd={setCustomEnd}
               filterCategory={filterCategory}
-              setFilterCategory={setFilterCategory}
+              setFilterCategory={handleSetFilterCategory}
               customPowerExponent={customPowerExponent}
-              setCustomPowerExponent={setCustomPowerExponent}
+              setCustomPowerExponent={handleSetCustomPowerExponent}
               multipleOfValue={multipleOfValue}
-              setMultipleOfValue={setMultipleOfValue}
+              setMultipleOfValue={handleSetMultipleOfValue}
               powerOfBase={powerOfBase}
-              setPowerOfBase={setPowerOfBase}
+              setPowerOfBase={handleSetPowerOfBase}
               sortOrder={sortOrder}
               setSortOrder={setSortOrder}
               searchFilter={searchFilter}
@@ -477,6 +527,7 @@ export default function App() {
                         filterCategory={filterCategory}
                         customPowerExponent={customPowerExponent}
                         powerOfBase={powerOfBase}
+                        multipleOfValue={multipleOfValue}
                       />
                     ))}
                   </AnimatePresence>
@@ -598,9 +649,11 @@ export default function App() {
                             : filterCategory === 'cube'
                             ? `Showing cubes for base numbers ${startNum} to ${endNum}`
                             : filterCategory === 'customPower'
-                            ? `Showing ${customPowerExponent}th powers (x${toSuperscript(customPowerExponent)}) for base numbers ${startNum} to ${endNum}`
+                            ? `Showing ${customPowerExponent}th powers (x${toSuperscript(customPowerExponent)}) for base numbers ${startNum} to ${Math.min(endNum, getMaxSafeBase(customPowerExponent))}`
                             : filterCategory === 'powerOf'
-                            ? `Showing powers of base ${powerOfBase} in range ${startNum} to ${endNum}`
+                            ? `Showing powers of base ${powerOfBase} (${powerOfBase}⁰ to ${powerOfBase}${toSuperscript(Math.min(endNum - 1, getMaxSafeExponent(powerOfBase)))})`
+                            : filterCategory === 'multipleOf'
+                            ? `Showing multiples of ${multipleOfValue} (multipliers ${startNum} to ${endNum})`
                             : `Showing numbers up to ${endNum}`}
                         </h4>
                         {autoLoadEnabled ? (
@@ -638,9 +691,13 @@ export default function App() {
                         }`}
                       >
                         {filteredNumbers.length} numbers loaded.{' '}
-                        {autoLoadEnabled
+                        {filterCategory === 'powerOf' && filteredNumbers.length >= getMaxSafeExponent(powerOfBase) + 1
+                          ? `All safe integer powers of base ${powerOfBase} are loaded (up to ${powerOfBase}${toSuperscript(getMaxSafeExponent(powerOfBase))}).`
+                          : filterCategory === 'customPower' && endNum >= getMaxSafeBase(customPowerExponent)
+                          ? `All safe integer ${customPowerExponent}th powers are loaded (up to ${getMaxSafeBase(customPowerExponent)}${toSuperscript(customPowerExponent)}).`
+                          : autoLoadEnabled
                           ? `Next ${itemTypeLabel} load automatically as you scroll.`
-                          : filterCategory === 'square' || filterCategory === 'cube' || filterCategory === 'customPower' || filterCategory === 'powerOf'
+                          : filterCategory === 'square' || filterCategory === 'cube' || filterCategory === 'customPower' || filterCategory === 'powerOf' || filterCategory === 'multipleOf'
                           ? `Click +50 or +100 to load more ${itemTypeLabel}, or enable Auto-Scroll.`
                           : 'Click +50 or +100 to load more, or enable Auto-Scroll.'}
                       </p>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Filter,
   SlidersHorizontal,
@@ -56,6 +56,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   totalFilteredCount,
   darkMode = false,
 }) => {
+  const standardMultiples = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 40, 50, 60, 75, 100];
+  const [isCustomMultiple, setIsCustomMultiple] = useState<boolean>(() => !standardMultiples.includes(multipleOfValue));
+
+  const standardPowerBases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25];
+  const [isCustomPowerBase, setIsCustomPowerBase] = useState<boolean>(() => !standardPowerBases.includes(powerOfBase));
+
   const rangeButtons: { label: string; preset: RangePreset }[] = [
     { label: '1 – 50', preset: '1-50' },
     { label: '1 – 100', preset: '1-100' },
@@ -299,15 +305,21 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
           {/* If Multiples of selected */}
           {filterCategory === 'multipleOf' && (
-            <div className="flex items-center gap-1.5 ml-2">
+            <div className="flex items-center gap-1.5 ml-2 flex-wrap">
               <span className={`text-xs ${darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'}`}>
                 Multiple of:
               </span>
               <select
-                value={multipleOfValue}
+                id="multiple-of-preset-select"
+                value={!isCustomMultiple && standardMultiples.includes(multipleOfValue) ? multipleOfValue : 'custom'}
                 onChange={(e) => {
                   soundFx.playPop(1);
-                  setMultipleOfValue(parseInt(e.target.value, 10));
+                  if (e.target.value === 'custom') {
+                    setIsCustomMultiple(true);
+                  } else {
+                    setIsCustomMultiple(false);
+                    setMultipleOfValue(parseInt(e.target.value, 10));
+                  }
                 }}
                 aria-label="Select base number for multiples"
                 className={`border rounded-lg px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer ${
@@ -316,26 +328,57 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     : 'bg-[#F2EFE9] border-[#E8E4DE] text-[#5A5A40]'
                 }`}
               >
-                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25].map((m) => (
+                {standardMultiples.map((m) => (
                   <option key={m} value={m}>
-                    {m}
+                    Multiple of {m}
                   </option>
                 ))}
+                <option value="custom">Custom Number...</option>
               </select>
+
+              {(isCustomMultiple || !standardMultiples.includes(multipleOfValue)) && (
+                <div className="flex items-center gap-1">
+                  <input
+                    id="custom-multiple-input"
+                    type="number"
+                    min="1"
+                    max="1000000"
+                    value={multipleOfValue}
+                    onChange={(e) => {
+                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                      setMultipleOfValue(val);
+                    }}
+                    placeholder="e.g. 23"
+                    className={`w-20 border rounded-lg px-2 py-0.5 text-xs font-mono-num font-bold focus:outline-none ${
+                      darkMode
+                        ? 'bg-[#181816] border-[#383832] text-[#A3B18A] focus:border-[#A3B18A]'
+                        : 'bg-white border-[#E8E4DE] text-[#5A5A40] focus:border-[#5A5A40]'
+                    }`}
+                    title="Enter any custom number to view its multiples"
+                    aria-label="Custom number for multiples"
+                  />
+                </div>
+              )}
             </div>
           )}
 
           {/* If Powers of base selected */}
           {filterCategory === 'powerOf' && (
-            <div className="flex items-center gap-1.5 ml-2">
+            <div className="flex items-center gap-1.5 ml-2 flex-wrap">
               <span className={`text-xs ${darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'}`}>
                 Powers of:
               </span>
               <select
-                value={powerOfBase}
+                id="power-of-preset-select"
+                value={!isCustomPowerBase && standardPowerBases.includes(powerOfBase) ? powerOfBase : 'custom'}
                 onChange={(e) => {
                   soundFx.playPop(1);
-                  setPowerOfBase(parseInt(e.target.value, 10));
+                  if (e.target.value === 'custom') {
+                    setIsCustomPowerBase(true);
+                  } else {
+                    setIsCustomPowerBase(false);
+                    setPowerOfBase(parseInt(e.target.value, 10));
+                  }
                 }}
                 aria-label="Select base number for powers"
                 className={`border rounded-lg px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer ${
@@ -344,12 +387,37 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     : 'bg-[#F2EFE9] border-[#E8E4DE] text-[#8C7348]'
                 }`}
               >
-                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16].map((b) => (
+                {standardPowerBases.map((b) => (
                   <option key={b} value={b}>
                     Base {b} ({b}⁰, {b}¹, {b}²...)
                   </option>
                 ))}
+                <option value="custom">Custom Base...</option>
               </select>
+
+              {(isCustomPowerBase || !standardPowerBases.includes(powerOfBase)) && (
+                <div className="flex items-center gap-1">
+                  <input
+                    id="custom-power-base-input"
+                    type="number"
+                    min="2"
+                    max="100000"
+                    value={powerOfBase}
+                    onChange={(e) => {
+                      const val = Math.max(2, parseInt(e.target.value, 10) || 2);
+                      setPowerOfBase(val);
+                    }}
+                    placeholder="Base..."
+                    className={`w-20 border rounded-lg px-2 py-0.5 text-xs font-mono-num font-bold focus:outline-none ${
+                      darkMode
+                        ? 'bg-[#181816] border-[#383832] text-[#C29B38] focus:border-[#C29B38]'
+                        : 'bg-white border-[#E8E4DE] text-[#8C7348] focus:border-[#8C7348]'
+                    }`}
+                    title="Enter any custom base number"
+                    aria-label="Custom base for powers"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
