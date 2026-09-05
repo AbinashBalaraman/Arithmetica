@@ -397,5 +397,29 @@ describe('Tier 5: Custom Multiples & Powers Controls & NumberCard Presentation',
     expect(NUMBER_CARD_SRC).toContain('filterCategory === \'multipleOf\'');
     expect(NUMBER_CARD_SRC).toContain('${multipleOfValue} × ${m}');
   });
+
+  it('NumberCard implements adaptive typography scaling for numbers up to 16 digits', () => {
+    expect(NUMBER_CARD_SRC).toContain('numDigits <= 3');
+    expect(NUMBER_CARD_SRC).toContain('numDigits === 4');
+    expect(NUMBER_CARD_SRC).toContain('numDigits <= 6');
+    expect(NUMBER_CARD_SRC).toContain('numDigits <= 8');
+    expect(NUMBER_CARD_SRC).toContain('numDigits <= 10');
+    expect(NUMBER_CARD_SRC).toContain('numDigits <= 13');
+    expect(NUMBER_CARD_SRC).toContain('text-xs sm:text-sm');
+    expect(NUMBER_CARD_SRC).toContain('numberTypography');
+  });
+
+  it('NumberCard stacks header into dedicated full-width row for large numbers (digits >= 5)', () => {
+    expect(NUMBER_CARD_SRC).toContain('numDigits >= 5 ? \'flex flex-col gap-1.5\' : \'flex items-start justify-between gap-2\'');
+    expect(NUMBER_CARD_SRC).toContain('block break-all select-all');
+    expect(NUMBER_CARD_SRC).toContain('min-w-0');
+  });
+
+  it('NumberCard protects table pair and factor pill with min-w-0 max-w-[65%] and shrink-0', () => {
+    expect(NUMBER_CARD_SRC).toContain('min-w-0 max-w-[65%]');
+    expect(NUMBER_CARD_SRC).toContain('shrink-0');
+    expect(NUMBER_CARD_SRC).toContain('previewPair.length > 14');
+  });
 });
+
 

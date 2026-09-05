@@ -219,18 +219,25 @@ export const NumberDetailModal: React.FC<NumberDetailModalProps> = ({
           </div>
 
           {/* Main Number Display & Badges */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-baseline gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+            <div className="flex items-baseline gap-3 min-w-0">
               <span
-                className={`text-4xl sm:text-5xl font-serif font-bold tracking-tight italic ${
+                title={number.toLocaleString()}
+                className={`font-serif font-bold tracking-tight italic break-all ${
+                  String(number).length > 10
+                    ? 'text-2xl sm:text-3xl md:text-4xl'
+                    : String(number).length > 6
+                    ? 'text-3xl sm:text-4xl md:text-5xl'
+                    : 'text-4xl sm:text-5xl'
+                } ${
                   darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
                 }`}
               >
                 {number}
               </span>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <h2
-                  className={`text-base sm:text-lg font-serif font-semibold tracking-tight ${
+                  className={`text-base sm:text-lg font-serif font-semibold tracking-tight break-all ${
                     darkMode ? 'text-[#FAF8F5]' : 'text-[#4A4A38]'
                   }`}
                 >
