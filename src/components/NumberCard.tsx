@@ -92,6 +92,18 @@ export const NumberCard: React.FC<NumberCardProps> = ({
     return `1 × ${n}`;
   }, [detail, n, filterCategory, customRoot, customPowerExponent, powerOfInfo, powerOfBase, multipleOfValue]);
 
+  const numDigits = useMemo(() => String(n).length, [n]);
+
+  const numberTypography = useMemo(() => {
+    if (numDigits <= 3) return 'text-3xl sm:text-4xl leading-none';
+    if (numDigits === 4) return 'text-2xl sm:text-3xl leading-tight';
+    if (numDigits <= 6) return 'text-xl sm:text-2xl leading-tight';
+    if (numDigits <= 8) return 'text-lg sm:text-xl leading-tight';
+    if (numDigits <= 10) return 'text-base sm:text-lg leading-snug';
+    if (numDigits <= 13) return 'text-sm sm:text-base leading-snug tracking-tighter';
+    return 'text-xs sm:text-sm leading-snug tracking-tighter';
+  }, [numDigits]);
+
   return (
     <motion.button
       id={`number-card-${n}`}
@@ -106,7 +118,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
       }}
       whileTap={{ scale: 0.97 }}
       onClick={handleClick}
-      className={`group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl text-left transition-colors duration-200 cursor-pointer overflow-hidden border ${
+      className={`group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl text-left transition-colors duration-200 cursor-pointer overflow-hidden border ${
         isSelected
           ? darkMode
             ? 'bg-[#33332B] border-[#C29B38] ring-2 ring-[#C29B38]/40 shadow-md'
@@ -174,9 +186,16 @@ export const NumberCard: React.FC<NumberCardProps> = ({
       />
 
       {/* Top Header Row: Number and Tags */}
-      <div className="flex items-start justify-between w-full gap-2">
+      <div
+        className={`w-full min-w-0 ${
+          numDigits >= 5 ? 'flex flex-col gap-1.5' : 'flex items-start justify-between gap-2'
+        }`}
+      >
         <span
-          className={`text-3xl sm:text-4xl font-serif font-bold tracking-tight transition-colors ${
+          title={n.toLocaleString()}
+          className={`font-serif font-bold tracking-tight transition-colors min-w-0 ${
+            numDigits >= 5 ? 'block break-all select-all' : 'truncate'
+          } ${numberTypography} ${
             darkMode
               ? (filterCategory === 'cube' && detail.isCube) || (filterCategory === 'customPower' && customRoot !== null)
                 ? 'text-[#FAF8F5] group-hover:text-[#D4A373]'
@@ -193,7 +212,11 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           {n}
         </span>
 
-        <div className="flex flex-wrap items-center justify-end gap-1 font-sans">
+        <div
+          className={`flex flex-wrap items-center gap-1 font-sans ${
+            numDigits >= 5 ? 'justify-start w-full' : 'justify-end shrink-0'
+          }`}
+        >
           {detail.isPrime && (
             <span
               className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
@@ -380,7 +403,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           darkMode ? 'border-[#383832]' : 'border-[#E8E4DE]'
         }`}
       >
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 max-w-[65%]">
           <span
             className={`text-[10px] uppercase tracking-widest font-semibold ${
               darkMode ? 'text-[#7A776E]' : 'text-[#9A948C]'
@@ -389,7 +412,10 @@ export const NumberCard: React.FC<NumberCardProps> = ({
             Table Pair
           </span>
           <span
-            className={`text-xs sm:text-sm font-bold font-mono-num ${
+            title={previewPair}
+            className={`font-bold font-mono-num truncate block ${
+              previewPair.length > 14 ? 'text-[11px]' : 'text-xs sm:text-sm'
+            } ${
               darkMode
                 ? filterCategory === 'cube' && detail.isCube
                   ? 'text-[#D4A373]'
@@ -403,7 +429,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
           </span>
         </div>
 
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <span
             className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
               darkMode
