@@ -20,8 +20,12 @@ interface FilterBarProps {
   setCustomEnd: (n: number) => void;
   filterCategory: FilterCategory;
   setFilterCategory: (cat: FilterCategory) => void;
+  customPowerExponent: number;
+  setCustomPowerExponent: (n: number) => void;
   multipleOfValue: number;
   setMultipleOfValue: (n: number) => void;
+  powerOfBase: number;
+  setPowerOfBase: (n: number) => void;
   sortOrder: SortOrder;
   setSortOrder: (order: SortOrder) => void;
   searchFilter: string;
@@ -39,8 +43,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   setCustomEnd,
   filterCategory,
   setFilterCategory,
+  customPowerExponent,
+  setCustomPowerExponent,
   multipleOfValue,
   setMultipleOfValue,
+  powerOfBase,
+  setPowerOfBase,
   sortOrder,
   setSortOrder,
   searchFilter,
@@ -65,7 +73,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { label: 'Odd', cat: 'odd' },
     { label: 'Squares (x²)', cat: 'square', icon: <Layers className="w-3.5 h-3.5 text-[#8C7348]" /> },
     { label: 'Cubes (x³)', cat: 'cube' },
+    { label: 'Power (xⁿ)...', cat: 'customPower' },
     { label: 'Multiples of...', cat: 'multipleOf' },
+    { label: 'Powers of...', cat: 'powerOf' },
   ];
 
   return (
@@ -250,6 +260,43 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </button>
           ))}
 
+          {/* If Custom Exponent (xⁿ) selected */}
+          {filterCategory === 'customPower' && (
+            <div className="flex items-center gap-1.5 ml-2">
+              <span className={`text-xs ${darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'}`}>
+                Power (xⁿ):
+              </span>
+              <select
+                value={customPowerExponent}
+                onChange={(e) => {
+                  soundFx.playPop(1);
+                  setCustomPowerExponent(parseInt(e.target.value, 10));
+                }}
+                aria-label="Select exponent for power customization"
+                className={`border rounded-lg px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer ${
+                  darkMode
+                    ? 'bg-[#181816] border-[#383832] text-[#D4A373]'
+                    : 'bg-[#F2EFE9] border-[#E8E4DE] text-[#9C6A5A]'
+                }`}
+              >
+                {[
+                  { exp: 2, label: 'x² (Squares)' },
+                  { exp: 3, label: 'x³ (Cubes)' },
+                  { exp: 4, label: 'x⁴ (4th Powers)' },
+                  { exp: 5, label: 'x⁵ (5th Powers)' },
+                  { exp: 6, label: 'x⁶ (6th Powers)' },
+                  { exp: 7, label: 'x⁷ (7th Powers)' },
+                  { exp: 8, label: 'x⁸ (8th Powers)' },
+                  { exp: 10, label: 'x¹⁰ (10th Powers)' },
+                ].map((p) => (
+                  <option key={p.exp} value={p.exp}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* If Multiples of selected */}
           {filterCategory === 'multipleOf' && (
             <div className="flex items-center gap-1.5 ml-2">
@@ -272,6 +319,34 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 20, 25].map((m) => (
                   <option key={m} value={m}>
                     {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* If Powers of base selected */}
+          {filterCategory === 'powerOf' && (
+            <div className="flex items-center gap-1.5 ml-2">
+              <span className={`text-xs ${darkMode ? 'text-[#9E9B90]' : 'text-[#9A948C]'}`}>
+                Powers of:
+              </span>
+              <select
+                value={powerOfBase}
+                onChange={(e) => {
+                  soundFx.playPop(1);
+                  setPowerOfBase(parseInt(e.target.value, 10));
+                }}
+                aria-label="Select base number for powers"
+                className={`border rounded-lg px-2.5 py-0.5 text-xs font-bold focus:outline-none cursor-pointer ${
+                  darkMode
+                    ? 'bg-[#181816] border-[#383832] text-[#C29B38]'
+                    : 'bg-[#F2EFE9] border-[#E8E4DE] text-[#8C7348]'
+                }`}
+              >
+                {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16].map((b) => (
+                  <option key={b} value={b}>
+                    Base {b} ({b}⁰, {b}¹, {b}²...)
                   </option>
                 ))}
               </select>
