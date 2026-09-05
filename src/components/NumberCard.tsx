@@ -19,6 +19,7 @@ interface NumberCardProps {
   filterCategory?: FilterCategory;
   customPowerExponent?: number;
   powerOfBase?: number;
+  multipleOfValue?: number;
 }
 
 export const NumberCard: React.FC<NumberCardProps> = ({
@@ -30,6 +31,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
   filterCategory,
   customPowerExponent = 4,
   powerOfBase = 2,
+  multipleOfValue = 3,
 }) => {
   const detail = useMemo(() => getNumberDetail(n), [n]);
 
@@ -54,6 +56,10 @@ export const NumberCard: React.FC<NumberCardProps> = ({
 
   // Select top highlight multiplication pair (excluding 1 x N if composite, or showing square/cube pair)
   const previewPair = useMemo(() => {
+    if (filterCategory === 'multipleOf' && multipleOfValue > 0 && n % multipleOfValue === 0) {
+      const m = Math.round(n / multipleOfValue);
+      return `${multipleOfValue} × ${m}`;
+    }
     if (filterCategory === 'customPower' && customRoot !== null) {
       const rest = integerPower(customRoot, customPowerExponent - 1);
       return `${customRoot} × ${rest}`;
@@ -84,7 +90,7 @@ export const NumberCard: React.FC<NumberCardProps> = ({
       return `${best.a} × ${best.b}`;
     }
     return `1 × ${n}`;
-  }, [detail, n, filterCategory, customRoot, customPowerExponent, powerOfInfo, powerOfBase]);
+  }, [detail, n, filterCategory, customRoot, customPowerExponent, powerOfInfo, powerOfBase, multipleOfValue]);
 
   return (
     <motion.button
@@ -199,7 +205,43 @@ export const NumberCard: React.FC<NumberCardProps> = ({
               Prime
             </span>
           )}
-          {filterCategory === 'customPower' ? (
+          {filterCategory === 'multipleOf' ? (
+            <>
+              {multipleOfValue > 0 && n % multipleOfValue === 0 && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#272B28] text-[#8DA399] border-[#38423E]'
+                      : 'bg-[#F2EFE9] text-[#5A6E64] border-[#E8E4DE]'
+                  }`}
+                >
+                  {multipleOfValue} × {Math.round(n / multipleOfValue)}
+                </span>
+              )}
+              {detail.isSquare && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2A2922] text-[#C29B38] border-[#4E4A35]'
+                      : 'bg-[#F2EFE9] text-[#8C7348] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.squareRoot}²
+                </span>
+              )}
+              {detail.isCube && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                    darkMode
+                      ? 'bg-[#2E2420] text-[#D4A373] border-[#483730]'
+                      : 'bg-[#F2EFE9] text-[#9C6A5A] border-[#E8E4DE]'
+                  }`}
+                >
+                  {detail.cubeRoot}³
+                </span>
+              )}
+            </>
+          ) : filterCategory === 'customPower' ? (
             <>
               {customRoot !== null && (
                 <span

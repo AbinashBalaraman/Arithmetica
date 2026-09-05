@@ -1,6 +1,11 @@
 // @ts-ignore: bun:test provided by Bun runtime
 import { describe, it, expect } from 'bun:test';
-import { getNumberDetail } from '../src/utils/mathUtils';
+import {
+  getNumberDetail,
+  integerPower,
+  getMaxSafeExponent,
+  getMaxSafeBase,
+} from '../src/utils/mathUtils';
 import type { FilterCategory, RangePreset, SortOrder } from '../src/types';
 
 /**
@@ -50,16 +55,42 @@ function generateNumbers(
   startNum: number,
   endNum: number,
   filterCategory: FilterCategory = 'all',
-  maxItems = 10000
+  maxItems = 10000,
+  multipleOfValue = 3,
+  powerOfBase = 2,
+  customPowerExponent = 4
 ): number[] {
   const arr: number[] = [];
   const limit = Math.min(endNum, startNum + maxItems - 1);
-  for (let i = startNum; i <= limit; i++) {
-    if (filterCategory === 'square') {
+  if (filterCategory === 'square') {
+    for (let i = startNum; i <= limit; i++) {
       arr.push(i * i);
-    } else if (filterCategory === 'cube') {
+    }
+  } else if (filterCategory === 'cube') {
+    for (let i = startNum; i <= limit; i++) {
       arr.push(i * i * i);
-    } else {
+    }
+  } else if (filterCategory === 'customPower') {
+    const maxBase = getMaxSafeBase(customPowerExponent);
+    const safeLimit = Math.min(limit, maxBase);
+    for (let i = startNum; i <= safeLimit; i++) {
+      arr.push(integerPower(i, customPowerExponent));
+    }
+  } else if (filterCategory === 'multipleOf') {
+    const step = Math.max(1, multipleOfValue);
+    for (let i = startNum; i <= limit; i++) {
+      arr.push(i * step);
+    }
+  } else if (filterCategory === 'powerOf') {
+    const maxExp = getMaxSafeExponent(powerOfBase);
+    for (let i = startNum; i <= limit; i++) {
+      const exp = i - 1;
+      if (exp >= 0 && exp <= maxExp) {
+        arr.push(integerPower(powerOfBase, exp));
+      }
+    }
+  } else {
+    for (let i = startNum; i <= limit; i++) {
       arr.push(i);
     }
   }
@@ -85,7 +116,14 @@ function filterAndSortNumbers(
       }
     }
 
-    if (filterCategory === 'all' || filterCategory === 'square' || filterCategory === 'cube') {
+    if (
+      filterCategory === 'all' ||
+      filterCategory === 'square' ||
+      filterCategory === 'cube' ||
+      filterCategory === 'customPower' ||
+      filterCategory === 'multipleOf' ||
+      filterCategory === 'powerOf'
+    ) {
       return true;
     }
 
@@ -326,3 +364,102 @@ describe('Tier 3: Cross-Feature Combinations (Auto-Load + Power Filters)', () =>
     expect(detail.squareRoot).toBe(8);
   });
 });
+
+describe('Tier 4: Multiples of & Powers of Full Set Generation & Safety Bounds', () => {
+  it('preset 1-50 in Multiples view generates exactly 50 multiples of 25 (25 to 1250)', () => {
+    const { startNum, endNum } = computeRangeBounds('1-50');
+    const multiples = generateNumbers(startNum, endNum, 'multipleOf', 10000, 25);
+    expect(multiples.length).toBe(50);
+    expect(multiples[0]).toBe(25); // 1 × 25
+    expect(multiples[1]).toBe(50); // 2 × 25
+    expect(multiples[2]).toBe(75); // 3 × 25
+    expect(multiples[49]).toBe(1250); // 50 × 25
+    for (let i = 0; i < multiples.length; i++) {
+      expect(multiples[i]).toBe((i + 1) * 25);
+    }
+  });
+
+  it('preset 1-100 in Multiples view generates exactly 100 multiples of 25 (25 to 2500)', () => {
+    const { startNum, endNum } = computeRangeBounds('1-100');
+    const multiples = generateNumbers(startNum, endNum, 'multipleOf', 10000, 25);
+    expect(multiples.length).toBe(100);
+    expect(multiples[0]).toBe(25);
+    expect(multiples[99]).toBe(2500); // 100 × 25
+  });
+
+  it('supports custom number multiples for any positive integer (e.g. 23 and 350)', () => {
+    const { startNum, endNum } = computeRangeBounds('1-50');
+    // Multiples of 23
+    const multiples23 = generateNumbers(startNum, endNum, 'multipleOf', 10000, 23);
+    expect(multiples23.length).toBe(50);
+    expect(multiples23[0]).toBe(23);
+    expect(multiples23[49]).toBe(1150); // 50 × 23
+
+    // Multiples of 350
+    const multiples350 = generateNumbers(startNum, endNum, 'multipleOf', 10000, 350);
+    expect(multiples350.length).toBe(50);
+    expect(multiples350[0]).toBe(350);
+    expect(multiples350[49]).toBe(17500); // 50 × 350
+  });
+
+  it('dynamic load (+50 extra) expands multiples series by 50 next items', () => {
+    const initial = computeRangeBounds('1-50');
+    const initialMultiples = generateNumbers(initial.startNum, initial.endNum, 'multipleOf', 10000, 25);
+    expect(initialMultiples.length).toBe(50);
+
+    // After clicking +50
+    const loaded = computeRangeBounds('1-50', 1, 50, 50);
+    const loadedMultiples = generateNumbers(loaded.startNum, loaded.endNum, 'multipleOf', 10000, 25);
+    expect(loadedMultiples.length).toBe(100);
+    expect(loadedMultiples[50]).toBe(1275); // 51 × 25
+    expect(loadedMultiples[99]).toBe(2500); // 100 × 25
+  });
+
+  it('preset 1-50 in Powers of base 2 generates 50 successive powers (2⁰ to 2⁴⁹)', () => {
+    const { startNum, endNum } = computeRangeBounds('1-50');
+    const powers = generateNumbers(startNum, endNum, 'powerOf', 10000, 3, 2);
+    expect(powers.length).toBe(50);
+    expect(powers[0]).toBe(1); // 2⁰
+    expect(powers[1]).toBe(2); // 2¹
+    expect(powers[2]).toBe(4); // 2²
+    expect(powers[3]).toBe(8); // 2³
+    expect(powers[49]).toBe(integerPower(2, 49)); // 2⁴⁹
+  });
+
+  it('preset 1-100 in Powers of base 2 safely caps at 53 powers without float overflow', () => {
+    const { startNum, endNum } = computeRangeBounds('1-100');
+    const powers = generateNumbers(startNum, endNum, 'powerOf', 10000, 3, 2);
+    expect(powers.length).toBe(53); // 2⁰ to 2⁵²
+    expect(powers[0]).toBe(1);
+    expect(powers[52]).toBe(integerPower(2, 52));
+    expect(powers[52]).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(powers[52])).toBe(true);
+  });
+
+  it('10th power (x¹⁰) clamps safely at base 39 preventing freeze and wrong numbers', () => {
+    const { startNum, endNum } = computeRangeBounds('1-50');
+    expect(getMaxSafeBase(10)).toBe(39);
+
+    const powers10th = generateNumbers(startNum, endNum, 'customPower', 10000, 3, 2, 10);
+    expect(powers10th.length).toBe(39); // 1¹⁰ to 39¹⁰
+    expect(powers10th[0]).toBe(1); // 1¹⁰
+    expect(powers10th[1]).toBe(1024); // 2¹⁰
+    expect(powers10th[38]).toBe(integerPower(39, 10)); // 39¹⁰
+    expect(powers10th[38]).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(powers10th[38])).toBe(true);
+
+    // None of the numbers should equal Number.MAX_SAFE_INTEGER due to inaccurate truncation
+    expect(powers10th).not.toContain(Number.MAX_SAFE_INTEGER);
+
+    // Factor detail for 39¹⁰ executes in <30ms without thread freeze
+    const startTime = performance.now();
+    const detail39 = getNumberDetail(powers10th[38]);
+    const elapsed = performance.now() - startTime;
+    expect(elapsed).toBeLessThan(100);
+    expect(detail39.primeFactors).toEqual([
+      { prime: 3, exponent: 10 },
+      { prime: 13, exponent: 10 },
+    ]);
+  });
+});
+
